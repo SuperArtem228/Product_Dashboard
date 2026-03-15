@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FL iGaming BI Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c14;
+    --surface: #0d1520;
+    --surface2: #121d2e;
+    --surface3: #1a2740;
+    --border: #1e3050;
+    --border2: #253d60;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --accent5: #ef4444;
+    --text: #e8f4ff;
+    --text2: #8ba8c8;
+    --text3: #4a6d94;
+    --positive: #10b981;
+    --negative: #ef4444;
+    --warning: #f59e0b;
+    --font: 'Syne', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; overflow-x: hidden; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+  
+  /* HEADER */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header-logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+  .header-logo span { color: var(--text2); font-weight: 400; font-size: 12px; }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .header-badge { background: var(--accent2); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; letter-spacing: 0.5px; }
+  
+  /* FILTER BAR */
+  .filter-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 24px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; position: sticky; top: 52px; z-index: 99; }
+  .filter-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+  .filter-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 12px; font-size: 12px; color: var(--text2); cursor: pointer; transition: all .15s; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+  .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-chip.active { background: rgba(0,229,255,.1); border-color: var(--accent); color: var(--accent); }
+  .filter-chip .chip-arrow { font-size: 9px; opacity: .5; }
+  .filter-divider { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+  .filter-reset { font-size: 11px; color: var(--text3); cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+  .filter-reset:hover { color: var(--accent5); }
+  .compare-btn { background: rgba(124,58,237,.15); border: 1px solid var(--accent2); color: var(--accent2); border-radius: 6px; padding: 4px 12px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  
+  /* NAV */
+  .nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 0; }
+  .nav-tab { padding: 12px 20px; font-size: 13px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; white-space: nowrap; }
+  .nav-tab:hover { color: var(--text2); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  
+  /* MAIN CONTENT */
+  .main { padding: 24px; display: flex; gap: 20px; position: relative; flex: 1; }
+  .content-area { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+  
+  /* KPI ROW */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: all .15s; position: relative; overflow: hidden; }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent); transform: scaleX(0); transition: transform .2s; transform-origin: left; }
+  .kpi-card:hover::before { transform: scaleX(1); }
+  .kpi-card:hover { border-color: var(--border2); background: var(--surface2); }
+  .kpi-card.selected { border-color: var(--accent); background: rgba(0,229,255,.05); }
+  .kpi-card.selected::before { transform: scaleX(1); }
+  .kpi-name { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .kpi-value { font-size: 28px; font-weight: 800; color: var(--text); font-family: var(--mono); line-height: 1; }
+  .kpi-delta { font-size: 11px; font-weight: 600; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+  .kpi-delta.up { color: var(--positive); }
+  .kpi-delta.down { color: var(--negative); }
+  .kpi-delta.neutral { color: var(--text3); }
+  .kpi-sub { font-size: 10px; color: var(--text3); margin-top: 4px; }
+  .info-icon { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--text3); display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--text3); cursor: help; flex-shrink: 0; }
+  
+  /* SECTION */
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .section-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .section-title { font-size: 13px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .section-subtitle { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .section-body { padding: 20px; }
+  .section-actions { display: flex; align-items: center; gap: 8px; }
+  
+  /* TOGGLE */
+  .toggle-group { display: flex; background: var(--surface2); border-radius: 6px; padding: 2px; border: 1px solid var(--border); }
+  .toggle-btn { padding: 4px 12px; font-size: 11px; font-weight: 600; color: var(--text3); cursor: pointer; border-radius: 4px; transition: all .15s; }
+  .toggle-btn.active { background: var(--accent); color: var(--bg); }
+  
+  /* FUNNEL */
+  .funnel-container { display: flex; flex-direction: column; gap: 4px; }
+  .funnel-step { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px 10px; border-radius: 8px; transition: background .15s; }
+  .funnel-step:hover { background: var(--surface2); }
+  .funnel-step.selected { background: rgba(0,229,255,.07); }
+  .funnel-bar-wrap { flex: 1; position: relative; height: 32px; display: flex; align-items: center; }
+  .funnel-bar { height: 32px; border-radius: 4px; transition: width .5s ease; position: relative; display: flex; align-items: center; min-width: 40px; }
+  .funnel-bar-label { position: absolute; left: 10px; font-size: 11px; font-weight: 700; color: white; white-space: nowrap; }
+  .funnel-drop { font-size: 11px; font-weight: 600; color: var(--negative); min-width: 60px; text-align: right; }
+  .funnel-step-name { font-size: 12px; color: var(--text2); min-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .funnel-step-cr { font-size: 13px; font-weight: 700; color: var(--text); font-family: var(--mono); min-width: 52px; text-align: right; }
+  .funnel-connector { display: flex; align-items: center; padding: 0 10px 0 212px; }
+  .funnel-connector-line { flex: 1; height: 1px; background: var(--border); }
+  .funnel-connector-drop { font-size: 10px; color: var(--text3); padding: 0 8px; }
+  
+  /* CHART WRAPPERS */
+  .chart-wrap { width: 100%; }
+  
+  /* TABLE */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .data-table td { padding: 10px 12px; font-size: 12px; color: var(--text2); border-bottom: 1px solid rgba(30,48,80,.5); vertical-align: middle; }
+  .data-table tr:hover td { background: rgba(255,255,255,.02); cursor: pointer; }
+  .data-table tr.selected td { background: rgba(0,229,255,.05); }
+  .cell-mono { font-family: var(--mono); font-size: 12px; }
+  .cell-name { color: var(--text); font-weight: 600; }
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+  .badge-green { background: rgba(16,185,129,.15); color: var(--positive); }
+  .badge-red { background: rgba(239,68,68,.15); color: var(--negative); }
+  .badge-yellow { background: rgba(245,158,11,.15); color: var(--warning); }
+  .badge-blue { background: rgba(0,229,255,.15); color: var(--accent); }
+  .badge-purple { background: rgba(124,58,237,.15); color: var(--accent2); }
+  
+  /* MINI BAR */
+  .mini-bar-wrap { display: flex; align-items: center; gap: 6px; }
+  .mini-bar { height: 6px; border-radius: 3px; background: var(--accent); }
+  .mini-bar-val { font-family: var(--mono); font-size: 11px; color: var(--text2); }
+  
+  /* DRAWER */
+  .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; }
+  .drawer { position: fixed; right: 0; top: 0; bottom: 0; width: 460px; background: var(--surface); border-left: 1px solid var(--border); z-index: 201; overflow-y: auto; transform: translateX(0); animation: slideIn .2s ease; }
+  @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  .drawer-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; position: sticky; top: 0; background: var(--surface); z-index: 1; }
+  .drawer-title { font-size: 16px; font-weight: 800; color: var(--text); }
+  .drawer-subtitle { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .drawer-close { font-size: 18px; color: var(--text3); cursor: pointer; padding: 4px; }
+  .drawer-close:hover { color: var(--text); }
+  .drawer-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+  .drawer-section { }
+  .drawer-section-title { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .formula-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; font-family: var(--mono); font-size: 13px; color: var(--accent); }
+  .def-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .def-item { background: var(--surface2); border-radius: 6px; padding: 10px; }
+  .def-item-label { font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .def-item-val { font-size: 12px; color: var(--text2); }
+  .insight-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .insight-item:last-child { border-bottom: none; }
+  .insight-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .insight-text { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .hypothesis-item { background: rgba(124,58,237,.1); border: 1px solid rgba(124,58,237,.3); border-radius: 6px; padding: 10px 14px; font-size: 12px; color: var(--text2); display: flex; gap: 8px; align-items: flex-start; }
+  
+  /* SCATTER */
+  .scatter-wrap { position: relative; }
+  .quadrant-label { position: absolute; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; opacity: .4; }
+  
+  /* HEATMAP */
+  .heatmap-grid { display: grid; gap: 4px; }
+  .heatmap-cell { border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; font-family: var(--mono); cursor: pointer; transition: transform .1s; min-height: 36px; }
+  .heatmap-cell:hover { transform: scale(1.05); }
+  .heatmap-header { font-size: 10px; color: var(--text3); font-weight: 600; text-align: center; }
+  .heatmap-row-label { font-size: 11px; color: var(--text2); display: flex; align-items: center; }
+  
+  /* TABS */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+  .tab { padding: 10px 18px; font-size: 12px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+  .tab:hover { color: var(--text2); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+  
+  /* SANKEY placeholder */
+  .path-flow { display: flex; flex-direction: column; gap: 8px; }
+  .path-row { display: flex; align-items: center; gap: 10px; }
+  .path-from { font-size: 11px; color: var(--text3); min-width: 120px; }
+  .path-bars { flex: 1; display: flex; gap: 4px; align-items: center; }
+  .path-segment { height: 20px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: rgba(255,255,255,.8); transition: width .4s ease; }
+  .path-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+  .path-legend-item { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text3); }
+  .path-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  
+  /* ANOMALY */
+  .anomaly-card { background: rgba(239,68,68,.07); border: 1px solid rgba(239,68,68,.2); border-radius: 8px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start; }
+  .anomaly-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--negative); flex-shrink: 0; margin-top: 4px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+  .anomaly-text { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .anomaly-badge { font-size: 10px; font-weight: 700; color: var(--negative); margin-top: 2px; }
+  
+  /* EMPTY STATE */
+  .empty-state { padding: 40px 20px; text-align: center; color: var(--text3); font-size: 12px; }
+  
+  /* TOOLTIP */
+  .tooltip-wrap { position: relative; display: inline-flex; }
+  .tooltip-popup { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--surface3); border: 1px solid var(--border2); border-radius: 8px; padding: 12px; width: 240px; z-index: 300; pointer-events: none; opacity: 0; transition: opacity .15s; }
+  .tooltip-wrap:hover .tooltip-popup { opacity: 1; }
+  .tooltip-title { font-size: 11px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+  .tooltip-formula { font-family: var(--mono); font-size: 11px; color: var(--text2); margin-bottom: 6px; background: var(--surface2); padding: 4px 8px; border-radius: 4px; }
+  .tooltip-text { font-size: 10px; color: var(--text3); line-height: 1.5; }
+  
+  /* COLORS */
+  .color-accent { color: var(--accent); }
+  .color-green { color: var(--positive); }
+  .color-red { color: var(--negative); }
+  .color-yellow { color: var(--warning); }
+  .color-purple { color: var(--accent2); }
+  .color-dim { color: var(--text3); }
+  
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+  select, option { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 12px; font-family: var(--font); outline: none; }
+  select:focus { border-color: var(--accent); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const { useState, useCallback, useMemo } = React;
+const { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ScatterChart, Scatter, CartesianGrid, Legend, ReferenceLine } = Recharts;
+
+// ============ MOCK DATA ============
+const COLORS = {
+  accent: '#00e5ff', accent2: '#7c3aed', accent3: '#10b981',
+  accent4: '#f59e0b', accent5: '#ef4444', accent6: '#ec4899',
+  bg: '#080c14', surface: '#0d1520', text2: '#8ba8c8', text3: '#4a6d94'
+};
+
+const FUNNEL_STEPS = [
+  { id: 'visit', label: 'Визит', cr: 100, color: '#00e5ff' },
+  { id: 'engaged', label: 'Вовлечённый визит', cr: 68.4, color: '#00c9e0' },
+  { id: 'reg_start', label: 'Начало регистрации', cr: 28.2, color: '#0099b8' },
+  { id: 'reg_complete', label: 'Регистрация завершена', cr: 18.7, color: '#0077a0' },
+  { id: 'deposit_intent', label: 'Намерение депозита', cr: 12.4, color: '#7c3aed' },
+  { id: 'method_select', label: 'Выбор метода оплаты', cr: 10.8, color: '#6d2fd4' },
+  { id: 'deposit_success', label: 'Депозит успешен', cr: 7.9, color: '#5b23bf' },
+  { id: 'game_start', label: 'Старт игры', cr: 6.8, color: '#10b981' },
+  { id: 'first_bet', label: 'Первая реальная ставка', cr: 5.6, color: '#0ea36e' },
+];
+
+const STEP_TO_STEP_CRs = [
+  { from: 'Визит', to: 'Engaged', cr: 68.4 },
+  { from: 'Engaged', to: 'RegStart', cr: 41.2 },
+  { from: 'RegStart', to: 'RegComplete', cr: 66.3 },
+  { from: 'RegComplete', to: 'DepIntent', cr: 66.3 },
+  { from: 'DepIntent', to: 'Method', cr: 87.1 },
+  { from: 'Method', to: 'Success', cr: 73.1 },
+  { from: 'Success', to: 'GameStart', cr: 86.1 },
+  { from: 'GameStart', to: 'FirstBet', cr: 82.4 },
+];
+
+const TREND_DATA = [
+  { date: '01.02', visit_engaged: 66.2, reg_cr: 39.4, dep_cr: 7.2, bet_cr: 5.1 },
+  { date: '05.02', visit_engaged: 67.8, reg_cr: 40.1, dep_cr: 7.5, bet_cr: 5.3 },
+  { date: '10.02', visit_engaged: 69.1, reg_cr: 41.8, dep_cr: 7.8, bet_cr: 5.4 },
+  { date: '15.02', visit_engaged: 68.0, reg_cr: 40.9, dep_cr: 7.6, bet_cr: 5.2 },
+  { date: '20.02', visit_engaged: 71.2, reg_cr: 42.3, dep_cr: 8.1, bet_cr: 5.7 },
+  { date: '25.02', visit_engaged: 70.5, reg_cr: 41.5, dep_cr: 8.0, bet_cr: 5.5 },
+  { date: '01.03', visit_engaged: 68.4, reg_cr: 41.2, dep_cr: 7.9, bet_cr: 5.6 },
+];
+
+const FIRST_INTERACTION = [
+  { name: 'Баннер главный', interaction: 31.2, dep_after: 8.9, bet_after: 5.2, color: COLORS.accent },
+  { name: 'Game card', interaction: 22.4, dep_after: 6.1, bet_after: 4.8, color: COLORS.accent3 },
+  { name: 'Story / Entry icon', interaction: 14.7, dep_after: 9.4, bet_after: 6.1, color: COLORS.accent2 },
+  { name: 'Bonus card', interaction: 10.3, dep_after: 12.8, bet_after: 7.3, color: COLORS.accent4 },
+  { name: 'Task widget', interaction: 7.8, dep_after: 11.2, bet_after: 6.8, color: '#ec4899' },
+  { name: 'Burger menu', interaction: 6.4, dep_after: 4.2, bet_after: 3.1, color: COLORS.text2 },
+  { name: 'Deposit button', interaction: 4.2, dep_after: 18.6, bet_after: 12.4, color: '#f97316' },
+  { name: 'Status/VIP widget', interaction: 3.0, dep_after: 13.4, bet_after: 8.9, color: '#a78bfa' },
+];
+
+const UX_FEATURES = [
+  { name: 'Главный баннер', zone: 'homepage', impression: 94.2, ctr: 31.2, close_rate: 12.1, downstream_dep: 8.9, downstream_reg: 14.2, device_flag: false, hidden_winner: false, attention_trap: false },
+  { name: 'Stories / Entry icons', zone: 'homepage', impression: 78.4, ctr: 14.7, close_rate: 42.3, downstream_dep: 9.4, downstream_reg: 18.7, device_flag: true, hidden_winner: true, attention_trap: false },
+  { name: 'Tasks widget', zone: 'homepage', impression: 61.2, ctr: 7.8, close_rate: 28.1, downstream_dep: 11.2, downstream_reg: 9.4, device_flag: false, hidden_winner: true, attention_trap: false },
+  { name: 'Bonus cards', zone: 'bonuses', impression: 55.8, ctr: 10.3, close_rate: 31.7, downstream_dep: 12.8, downstream_reg: 16.3, device_flag: false, hidden_winner: false, attention_trap: false },
+  { name: 'Hall of Fame', zone: 'discovery', impression: 48.3, ctr: 18.9, close_rate: 68.4, downstream_dep: 2.1, downstream_reg: 3.4, device_flag: false, hidden_winner: false, attention_trap: true },
+  { name: 'Popular games section', zone: 'discovery', impression: 82.1, ctr: 22.4, close_rate: 18.2, downstream_dep: 6.1, downstream_reg: 8.7, device_flag: false, hidden_winner: false, attention_trap: false },
+  { name: 'Burger menu', zone: 'navigation', impression: 71.4, ctr: 6.4, close_rate: 44.2, downstream_dep: 4.2, downstream_reg: 5.1, device_flag: true, hidden_winner: false, attention_trap: false },
+  { name: 'Status/VIP widget', zone: 'vip', impression: 44.1, ctr: 3.0, close_rate: 22.4, downstream_dep: 13.4, downstream_reg: 4.2, device_flag: false, hidden_winner: true, attention_trap: false },
+  { name: 'App promo', zone: 'app', impression: 38.7, ctr: 2.8, close_rate: 55.1, downstream_dep: 3.1, downstream_reg: 2.8, device_flag: true, hidden_winner: false, attention_trap: false },
+  { name: 'Referral', zone: 'referral', impression: 22.4, ctr: 1.4, close_rate: 61.2, downstream_dep: 1.8, downstream_reg: 2.1, device_flag: false, hidden_winner: false, attention_trap: false },
+  { name: 'Jackpots section', zone: 'discovery', impression: 41.8, ctr: 9.1, close_rate: 72.3, downstream_dep: 3.4, downstream_reg: 4.1, device_flag: false, hidden_winner: false, attention_trap: true },
+];
+
+const REG_FUNNEL = [
+  { step: 'Modal impression', cr: 100, color: '#00e5ff' },
+  { step: 'Form start', cr: 78.4, color: '#00c0d0' },
+  { step: 'Email/Phone complete', cr: 62.1, color: '#0099b0' },
+  { step: 'Password complete', cr: 54.8, color: '#7c3aed' },
+  { step: 'Submit click', cr: 48.2, color: '#6b2fd0' },
+  { step: 'Reg success', cr: 42.3, color: '#10b981' },
+];
+
+const REG_ENTRY_POINTS = [
+  { source: 'Прямой вход', reg_start: 100, reg_complete: 42.3, dep_after: 9.1 },
+  { source: 'Из баннера', reg_start: 112.4, reg_complete: 48.7, dep_after: 11.2 },
+  { source: 'Из bonus card', reg_start: 108.1, reg_complete: 51.2, dep_after: 14.8 },
+  { source: 'Из game card', reg_start: 89.4, reg_complete: 38.1, dep_after: 7.4 },
+  { source: 'Из promo', reg_start: 118.2, reg_complete: 55.4, dep_after: 16.3 },
+  { source: 'Из store', reg_start: 94.7, reg_complete: 44.1, dep_after: 12.7 },
+];
+
+const FIELD_FRICTION = [
+  { field: 'Email', drop_rate: 8.4, error_rate: 12.1, label: 'Поле Email' },
+  { field: 'Телефон', drop_rate: 14.7, error_rate: 22.4, label: 'Поле Телефон' },
+  { field: 'Пароль', drop_rate: 18.2, error_rate: 31.8, label: 'Поле Пароль' },
+  { field: 'Promo код', drop_rate: 6.1, error_rate: 44.2, label: 'Промо-код' },
+];
+
+const BONUS_TYPES = [
+  { type: 'Welcome', page_open: 100, card_open: 68.4, conditions: 31.2, apply: 41.8, blocked: 8.2, dep_after: 18.7, dep_success: 14.2 },
+  { type: 'Second deposit', page_open: 62.1, card_open: 44.8, conditions: 22.1, apply: 34.2, blocked: 6.4, dep_after: 14.8, dep_success: 11.6 },
+  { type: 'Reload cash', page_open: 48.3, card_open: 38.7, conditions: 18.4, apply: 28.1, blocked: 11.2, dep_after: 12.4, dep_success: 9.8 },
+  { type: 'Reload spins', page_open: 41.2, card_open: 31.4, conditions: 14.2, apply: 22.8, blocked: 7.8, dep_after: 8.9, dep_success: 7.1 },
+  { type: 'Promo code', page_open: 34.8, card_open: 28.1, conditions: 11.4, apply: 18.4, blocked: 24.1, dep_after: 21.4, dep_success: 16.8 },
+  { type: 'Store bonus', page_open: 28.4, card_open: 22.7, conditions: 8.7, apply: 14.2, blocked: 4.1, dep_after: 9.8, dep_success: 8.2 },
+];
+
+const STORE_FUNNEL = [
+  { step: 'Открытие магазина', cr: 100 },
+  { step: 'Выбор категории', cr: 72.4 },
+  { step: 'Открытие товара', cr: 54.8 },
+  { step: 'Настройка', cr: 42.1 },
+  { step: 'Попытка покупки', cr: 31.8 },
+  { step: 'Успешная покупка', cr: 22.4 },
+];
+
+const STORE_ENTRY = [
+  { source: 'Из Tasks', pct: 34.2 },
+  { source: 'Из Bonuses', pct: 24.8 },
+  { source: 'Из Burger', pct: 18.4 },
+  { source: 'VIP/Status', pct: 12.7 },
+  { source: 'Homepage', pct: 9.9 },
+];
+
+const DISCOVERY_SECTIONS = [
+  { name: 'Популярные игры', impression: 82.1, click: 22.4, game_open: 18.1, demo: 8.4, real: 12.7, first_bet: 9.4, return: 14.2 },
+  { name: 'Live casino', impression: 74.8, click: 19.8, game_open: 16.4, demo: 2.1, real: 14.8, first_bet: 11.2, return: 18.7 },
+  { name: 'Слоты', impression: 68.4, click: 17.2, game_open: 14.1, demo: 9.8, real: 8.4, first_bet: 6.1, return: 22.4 },
+  { name: 'Crash игры', impression: 54.2, click: 24.1, game_open: 21.8, demo: 4.2, real: 18.4, first_bet: 14.7, return: 12.1 },
+  { name: 'Heated', impression: 48.7, click: 31.4, game_open: 28.2, demo: 12.1, real: 19.4, first_bet: 15.8, return: 8.4 },
+  { name: 'Новинки', impression: 61.2, click: 14.8, game_open: 12.1, demo: 7.4, real: 7.8, first_bet: 5.4, return: 31.2 },
+  { name: 'Hall of Fame', impression: 48.3, click: 18.9, game_open: 4.2, demo: 1.4, real: 3.1, first_bet: 2.1, return: 68.4 },
+  { name: 'Top Wins', impression: 44.1, click: 22.1, game_open: 6.8, demo: 2.8, real: 4.7, first_bet: 3.2, return: 54.8 },
+  { name: 'Jackpots', impression: 41.8, click: 9.1, game_open: 7.4, demo: 3.1, real: 5.8, first_bet: 4.2, return: 44.2 },
+  { name: 'Провайдеры', impression: 38.4, click: 8.4, game_open: 6.1, demo: 4.8, real: 4.2, first_bet: 3.1, return: 28.7 },
+];
+
+const DEPOSIT_FUNNEL = [
+  { step: 'Открытие депозита', cr: 100, color: '#00e5ff' },
+  { step: 'Метод виден', cr: 97.4, color: '#00c5de' },
+  { step: 'Метод выбран', cr: 84.1, color: '#7c3aed' },
+  { step: 'Бонус прикреплён', cr: 71.8, color: '#6d2fd4' },
+  { step: 'Сумма введена', cr: 68.4, color: '#5b23bf' },
+  { step: 'Submit нажат', cr: 61.2, color: '#f59e0b' },
+  { step: 'Успешный депозит', cr: 44.8, color: '#10b981' },
+];
+
+const PAYMENT_METHODS = [
+  { method: 'Банковская карта', success: 68.4, fail: 18.2, abandon: 13.4, retry: 42.1, error_top: 'Declined (31%)', color: COLORS.accent },
+  { method: 'Криптовалюта', success: 84.2, fail: 8.4, abandon: 7.4, retry: 24.8, error_top: 'Timeout (44%)', color: COLORS.accent3 },
+  { method: 'Электронный кошелёк', success: 79.1, fail: 11.4, abandon: 9.5, retry: 31.2, error_top: '3DS fail (28%)', color: COLORS.accent2 },
+  { method: 'Мобильный платёж', success: 54.8, fail: 28.4, abandon: 16.8, retry: 58.4, error_top: 'Provider down (41%)', color: COLORS.accent4 },
+  { method: 'Банковский перевод', success: 71.2, fail: 14.8, abandon: 14.0, retry: 38.7, error_top: 'Technical (22%)', color: '#ec4899' },
+];
+
+const ERROR_TYPES = [
+  { type: 'Declined', freq: 34.2, impact: 28.4 },
+  { type: 'Timeout', freq: 22.8, impact: 18.7 },
+  { type: '3DS fail', freq: 18.4, impact: 24.1 },
+  { type: 'Insufficient funds', freq: 12.7, impact: 14.8 },
+  { type: 'Provider unavailable', freq: 8.4, impact: 31.2 },
+  { type: 'Technical fail', freq: 3.5, impact: 11.4 },
+];
+
+const HEATMAP_METHODS = ['Карта', 'Крипто', 'Кошелёк', 'Мобильный'];
+const HEATMAP_DEVICES = ['iOS', 'Android', 'Desktop', 'Tablet'];
+const HEATMAP_VALUES = [
+  [72.4, 88.1, 82.4, 58.7],
+  [61.2, 79.8, 74.1, 48.4],
+  [68.9, 84.2, 77.8, 54.1],
+  [42.1, 71.4, 68.2, 38.9],
+];
+
+const KPI_DEFINITIONS = {
+  visit_engaged: {
+    title: 'Engaged Visit Rate',
+    what: 'Доля сессий с минимум одним значимым действием: клик, скролл >50%, время >30 сек',
+    formula: 'Engaged Sessions / Total Sessions × 100',
+    numerator: 'Сессии с ≥1 целевым событием',
+    denominator: 'Все сессии включая боты',
+    high: 'Высокое качество трафика, хорошее первое впечатление от продукта',
+    low: 'Плохой трафик, нерелевантная аудитория, проблемы с первым экраном',
+    trap: 'Бот-трафик может искусственно снизить. Нужна фильтрация.',
+    use: 'Сравнивать по источникам трафика для оценки качества канала'
+  },
+  reg_cr: {
+    title: 'Registration Conversion Rate',
+    what: 'Доля от engaged-визитов, завершивших регистрацию',
+    formula: 'Reg Complete / Engaged Visits × 100',
+    numerator: 'Успешные регистрации (backend event)',
+    denominator: 'Engaged Sessions',
+    high: 'Эффективный reg flow, высокая мотивация пользователей',
+    low: 'Friction в форме, слабый value prop, неподходящая аудитория',
+    trap: 'Разные entry points дают разную CR. Не смешивать без сегментации.',
+    use: 'AB-тест reg form, сравнение entry points'
+  },
+  dep_cr: {
+    title: 'Deposit Conversion Rate',
+    what: 'Доля зарегистрированных, совершивших первый депозит',
+    formula: 'First Deposit Success / Reg Complete × 100',
+    numerator: 'Первые успешные депозиты',
+    denominator: 'Завершённые регистрации',
+    high: 'Хороший онбординг, понятный value prop депозита',
+    low: 'Нет мотивации, высокий friction в deposit UX, payment issues',
+    trap: 'Зависит от payment method coverage и geo. Нормировать отдельно.',
+    use: 'Диагностика deposit UX, бонусной механики, платёжных методов'
+  },
+};
+
+// ============ COMPONENTS ============
+
+function InfoTooltip({ metricKey }) {
+  const def = KPI_DEFINITIONS[metricKey];
+  if (!def) return null;
+  return (
+    <div className="tooltip-wrap">
+      <div className="info-icon">i</div>
+      <div className="tooltip-popup">
+        <div className="tooltip-title">{def.title}</div>
+        <div className="tooltip-formula">{def.formula}</div>
+        <div className="tooltip-text" style={{marginBottom:4}}><b style={{color:'#8ba8c8'}}>Что:</b> {def.what}</div>
+        <div className="tooltip-text"><b style={{color:'#8ba8c8'}}>⚠</b> {def.trap}</div>
+      </div>
+    </div>
+  );
+}
+
+function KPICard({ title, value, delta, sub, selected, onClick, metricKey, color }) {
+  const isUp = delta > 0;
+  return (
+    <div className={`kpi-card ${selected ? 'selected' : ''}`} onClick={onClick}>
+      <div className="kpi-name">
+        <span>{title}</span>
+        <InfoTooltip metricKey={metricKey} />
+      </div>
+      <div className="kpi-value" style={{color: color || 'var(--text)'}}>{value}</div>
+      <div className={`kpi-delta ${isUp ? 'up' : 'down'}`}>
+        {isUp ? '▲' : '▼'} {Math.abs(delta)} pp vs период
+      </div>
+      {sub && <div className="kpi-sub">{sub}</div>}
+    </div>
+  );
+}
+
+function FilterBar({ filters, setFilters }) {
+  const projects = ['FL', 'FL2', 'FL3'];
+  const periods = ['7 дней', '14 дней', '30 дней', '90 дней'];
+  const devices = ['Все', 'Mobile', 'Desktop', 'Tablet'];
+  const geos = ['Все гео', 'RU', 'KZ', 'UA', 'BY'];
+  const lifecycles = ['Все', 'Новые', 'Возвращающиеся'];
+
+  return (
+    <div className="filter-bar">
+      <span className="filter-label">Фильтры</span>
+      <div className="filter-divider"/>
+      {projects.map(p => (
+        <div key={p} className={`filter-chip ${filters.project === p ? 'active' : ''}`}
+          onClick={() => setFilters(f => ({...f, project: p}))}>
+          {p}
+        </div>
+      ))}
+      <div className="filter-divider"/>
+      {periods.map(p => (
+        <div key={p} className={`filter-chip ${filters.period === p ? 'active' : ''}`}
+          onClick={() => setFilters(f => ({...f, period: p}))}>
+          {p}
+        </div>
+      ))}
+      <div className="filter-divider"/>
+      {devices.map(d => (
+        <div key={d} className={`filter-chip ${filters.device === d ? 'active' : ''}`}
+          onClick={() => setFilters(f => ({...f, device: d}))}>
+          {d}
+        </div>
+      ))}
+      <div className="filter-divider"/>
+      {geos.map(g => (
+        <div key={g} className={`filter-chip ${filters.geo === g ? 'active' : ''}`}
+          onClick={() => setFilters(f => ({...f, geo: g}))}>
+          {g}
+        </div>
+      ))}
+      <div className="filter-divider"/>
+      {lifecycles.map(l => (
+        <div key={l} className={`filter-chip ${filters.lifecycle === l ? 'active' : ''}`}
+          onClick={() => setFilters(f => ({...f, lifecycle: l}))}>
+          {l}
+        </div>
+      ))}
+      <div className="filter-divider"/>
+      <button className="compare-btn">⇄ Сравнить</button>
+      <span className="filter-reset" onClick={() => setFilters({project:'FL',period:'30 дней',device:'Все',geo:'Все гео',lifecycle:'Все'})}>
+        ✕ Сбросить
+      </span>
+    </div>
+  );
+}
+
+function DrawerOverlay({ item, onClose }) {
+  if (!item) return null;
+  return (
+    <>
+      <div className="drawer-overlay" onClick={onClose}/>
+      <div className="drawer">
+        <div className="drawer-header">
+          <div>
+            <div className="drawer-title">{item.title}</div>
+            <div className="drawer-subtitle">{item.subtitle}</div>
+          </div>
+          <div className="drawer-close" onClick={onClose}>✕</div>
+        </div>
+        <div className="drawer-body">
+          {item.formula && (
+            <div className="drawer-section">
+              <div className="drawer-section-title">Формула</div>
+              <div className="formula-box">{item.formula}</div>
+            </div>
+          )}
+          {item.definition && (
+            <div className="drawer-section">
+              <div className="drawer-section-title">Определение</div>
+              <div style={{fontSize:13,color:'var(--text2)',lineHeight:1.6}}>{item.definition}</div>
+            </div>
+          )}
+          {(item.numerator || item.denominator) && (
+            <div className="drawer-section">
+              <div className="def-grid">
+                <div className="def-item">
+                  <div className="def-item-label">Числитель</div>
+                  <div className="def-item-val">{item.numerator}</div>
+                </div>
+                <div className="def-item">
+                  <div className="def-item-label">Знаменатель</div>
+                  <div className="def-item-val">{item.denominator}</div>
+                </div>
+              </div>
+            </div>
+          )}
+          {item.insights && (
+            <div className="drawer-section">
+              <div className="drawer-section-title">Инсайты и интерпретация</div>
+              {item.insights.map((ins, i) => (
+                <div key={i} className="insight-item">
+                  <div className="insight-icon">{ins.icon}</div>
+                  <div className="insight-text">{ins.text}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {item.hypotheses && (
+            <div className="drawer-section">
+              <div className="drawer-section-title">Продуктовые гипотезы</div>
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                {item.hypotheses.map((h, i) => (
+                  <div key={i} className="hypothesis-item">
+                    <span>💡</span>
+                    <span>{h}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {item.segments && (
+            <div className="drawer-section">
+              <div className="drawer-section-title">Разбивка по сегментам</div>
+              <table className="data-table" style={{fontSize:11}}>
+                <thead>
+                  <tr>
+                    <th>Сегмент</th>
+                    <th>Значение</th>
+                    <th>Δ vs среднее</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {item.segments.map((s, i) => (
+                    <tr key={i}>
+                      <td className="cell-name">{s.name}</td>
+                      <td className="cell-mono">{s.value}</td>
+                      <td>
+                        <span className={s.delta > 0 ? 'color-green' : 'color-red'} style={{fontFamily:'var(--mono)',fontSize:11}}>
+                          {s.delta > 0 ? '+' : ''}{s.delta} pp
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function FunnelChart({ steps, onStepClick, selectedStep }) {
+  const maxCr = steps[0].cr;
+  return (
+    <div className="funnel-container">
+      {steps.map((step, i) => {
+        const width = (step.cr / maxCr) * 100;
+        const drop = i > 0 ? (steps[i-1].cr - step.cr).toFixed(1) : null;
+        const stepCR = i > 0 ? ((step.cr / steps[i-1].cr) * 100).toFixed(1) : '100';
+        return (
+          <div key={step.id}>
+            {i > 0 && (
+              <div className="funnel-connector">
+                <div className="funnel-connector-line"/>
+                <div className="funnel-connector-drop" style={{color:drop > 20 ? 'var(--negative)' : 'var(--text3)'}}>
+                  −{drop}%
+                </div>
+                <div className="funnel-connector-line"/>
+              </div>
+            )}
+            <div className={`funnel-step ${selectedStep === step.id ? 'selected' : ''}`}
+              onClick={() => onStepClick && onStepClick(step)}>
+              <div className="funnel-step-name">{step.label}</div>
+              <div className="funnel-bar-wrap">
+                <div className="funnel-bar" style={{width:`${width}%`, background: step.color, opacity: 0.85}}>
+                  <span className="funnel-bar-label">{step.cr}%</span>
+                </div>
+              </div>
+              <div className="funnel-step-cr" style={{color: step.color}}>{step.cr}%</div>
+              {i > 0 && (
+                <div className="funnel-drop">{stepCR}% CR</div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function PathFlow({ title, paths }) {
+  const colors = [COLORS.accent, COLORS.accent3, COLORS.accent2, COLORS.accent4, COLORS.accent5, '#ec4899'];
+  return (
+    <div>
+      <div style={{fontSize:11,color:'var(--text3)',marginBottom:12,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}}>{title}</div>
+      <div className="path-flow">
+        {paths.map((p, i) => (
+          <div key={i} className="path-row">
+            <div className="path-from">{p.from}</div>
+            <div className="path-bars">
+              {p.segments.map((seg, si) => (
+                <div key={si} className="path-segment"
+                  style={{width:`${seg.pct}%`, background:colors[si], minWidth: seg.pct > 5 ? undefined : 0}}>
+                  {seg.pct > 8 && `${seg.pct}%`}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="path-legend">
+        {paths[0].segments.map((s, i) => (
+          <div key={i} className="path-legend-item">
+            <div className="path-legend-dot" style={{background:colors[i]}}/>
+            {s.label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MiniBar({ value, max, color }) {
+  return (
+    <div className="mini-bar-wrap">
+      <div className="mini-bar" style={{width:`${(value/max)*100}%`, maxWidth:120, background: color || 'var(--accent)'}}/>
+      <div className="mini-bar-val">{value}%</div>
+    </div>
+  );
+}
+
+function HeatmapChart({ rows, cols, values, title }) {
+  const allVals = values.flat();
+  const min = Math.min(...allVals), max = Math.max(...allVals);
+  const getColor = (v) => {
+    const t = (v - min) / (max - min);
+    const r = Math.round(239 * (1-t) + 16 * t);
+    const g = Math.round(68 * (1-t) + 185 * t);
+    const b = Math.round(68 * (1-t) + 129 * t);
+    return `rgba(${r},${g},${b},0.7)`;
+  };
+  return (
+    <div>
+      {title && <div style={{fontSize:11,color:'var(--text3)',marginBottom:12,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}}>{title}</div>}
+      <div style={{display:'grid', gridTemplateColumns:`120px repeat(${cols.length}, 1fr)`, gap:4}}>
+        <div/>
+        {cols.map((c,i) => <div key={i} className="heatmap-header">{c}</div>)}
+        {rows.map((row, ri) => (
+          <>
+            <div key={`r${ri}`} className="heatmap-row-label">{row}</div>
+            {values[ri].map((v, ci) => (
+              <div key={ci} className="heatmap-cell" style={{background:getColor(v)}}>{v}%</div>
+            ))}
+          </>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============ PAGES ============
+
+function Page1CoreJourney({ onDrawer }) {
+  const [selectedStep, setSelectedStep] = useState(null);
+  const [trendMetric, setTrendMetric] = useState('visit_engaged');
+  const [funnelMode, setFunnelMode] = useState('stepwise');
+
+  const stepDrawers = {
+    engaged: {
+      title: 'Вовлечённый визит',
+      subtitle: 'Core Journey · Шаг 2',
+      formula: 'Engaged Sessions / Total Sessions × 100',
+      numerator: 'Сессии с ≥1 целевым событием (клик, скролл >50%, >30 сек)',
+      denominator: 'Все сессии',
+      definition: 'Сессия считается вовлечённой, если пользователь совершил хотя бы одно значимое действие. Это базовая фильтрация от bounce-трафика.',
+      insights: [
+        { icon: '📊', text: 'Текущее значение 68.4% — хороший сигнал. Типичный бенчмарк для iGaming 55–75%.' },
+        { icon: '⚠', text: 'Аффилиатный трафик может давать значительно ниже — следить по сегменту affil.' },
+        { icon: '📱', text: 'Mobile обычно даёт ниже из-за быстрых отказов. Проверь desktop vs mobile split.' },
+      ],
+      hypotheses: [
+        'Слабый первый экран — не хватает value proposition выше fold',
+        'Медленная загрузка на mobile снижает вовлечение до первого действия',
+        'Нерелевантный трафик от аффилиатов — нужна сегментация по источнику',
+      ],
+      segments: [
+        { name: 'Mobile', value: '61.2%', delta: -7.2 },
+        { name: 'Desktop', value: '78.4%', delta: +10.0 },
+        { name: 'Аффилиатный', value: '54.8%', delta: -13.6 },
+        { name: 'Прямой', value: '74.1%', delta: +5.7 },
+        { name: 'Новые', value: '64.2%', delta: -4.2 },
+        { name: 'Возвращающиеся', value: '82.1%', delta: +13.7 },
+      ]
+    },
+    reg_start: {
+      title: 'Начало регистрации',
+      subtitle: 'Core Journey · Шаг 3',
+      formula: 'Reg Modal Open / Engaged Sessions × 100',
+      numerator: 'Уникальные открытия reg modal за сессию',
+      denominator: 'Engaged Sessions',
+      definition: 'Доля вовлечённых пользователей, которые начали процесс регистрации. Открытие модала = намерение.',
+      insights: [
+        { icon: '🎯', text: 'Story/bonus entry точки дают значительно выше reg_start_rate vs прямой вход.' },
+        { icon: '📉', text: 'Если высокий engaged visit но низкий reg_start — нет понятного CTA к регистрации.' },
+      ],
+      hypotheses: [
+        'CTA к регистрации недостаточно заметны на homepage',
+        'Пользователи хотят посмотреть игры до регистрации — нужен мягкий триггер',
+        'Бонусный messaging на первом экране может поднять намерение к reg',
+      ],
+      segments: [
+        { name: 'После баннера', value: '34.2%', delta: +6.0 },
+        { name: 'После bonus card', value: '38.7%', delta: +10.5 },
+        { name: 'После game card', value: '24.1%', delta: -4.1 },
+        { name: 'Прямой вход', value: '28.2%', delta: 0 },
+      ]
+    }
+  };
+
+  const handleStepClick = (step) => {
+    setSelectedStep(step.id);
+    const drawer = stepDrawers[step.id];
+    if (drawer) onDrawer(drawer);
+  };
+
+  const trendOptions = [
+    { key: 'visit_engaged', label: 'Engaged Visit', color: COLORS.accent },
+    { key: 'reg_cr', label: 'Reg CR', color: COLORS.accent2 },
+    { key: 'dep_cr', label: 'Deposit CR', color: COLORS.accent3 },
+    { key: 'bet_cr', label: 'First Bet CR', color: COLORS.accent4 },
+  ];
+  const selectedTrend = trendOptions.find(t => t.key === trendMetric);
+
+  const afterEngaged = [
+    { from: 'Engaged Visit', segments: [
+      { label: 'RegStart', pct: 41 },
+      { label: 'GameOpen (demo)', pct: 22 },
+      { label: 'BonusPage', pct: 14 },
+      { label: 'BurgerMenu', pct: 10 },
+      { label: 'Exit', pct: 13 },
+    ]}
+  ];
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      {/* Anomaly */}
+      <div className="anomaly-card">
+        <div className="anomaly-dot"/>
+        <div>
+          <div className="anomaly-text">Регистрация после bonus card выше нормы на 10.5 pp — возможен сигнал к усилению bonus messaging на homepage</div>
+          <div className="anomaly-badge">Аномалия обнаружена · 2 часа назад</div>
+        </div>
+      </div>
+
+      {/* KPI Row */}
+      <div className="kpi-row">
+        <KPICard title="Engaged Visit" value="68.4%" delta={+1.8} sub="от всех визитов" metricKey="visit_engaged" color={COLORS.accent}
+          onClick={() => onDrawer(stepDrawers['engaged'])} />
+        <KPICard title="Reg Complete" value="18.7%" delta={-0.4} sub="от engaged visits" metricKey="reg_cr" color={COLORS.accent2}
+          onClick={() => onDrawer(stepDrawers['reg_start'])} />
+        <KPICard title="Deposit Success" value="7.9%" delta={+0.3} sub="от engaged visits" metricKey="dep_cr" color={COLORS.accent3}/>
+        <KPICard title="Game Start" value="6.8%" delta={+0.1} sub="от engaged visits" color={COLORS.accent4}/>
+        <KPICard title="First Real Bet" value="5.6%" delta={+0.2} sub="от engaged visits" color="#ec4899"/>
+        <KPICard title="Reg→Deposit" value="42.2%" delta={+1.1} sub="step-to-step CR" color={COLORS.accent}/>
+      </div>
+
+      <div className="grid-1-2">
+        {/* Funnel */}
+        <div className="section">
+          <div className="section-header">
+            <div>
+              <div className="section-title">Core Journey Funnel</div>
+              <div className="section-subtitle">Кликни на шаг для деталей</div>
+            </div>
+            <div className="toggle-group">
+              <div className={`toggle-btn ${funnelMode==='stepwise'?'active':''}`} onClick={()=>setFunnelMode('stepwise')}>Step-to-Step</div>
+              <div className={`toggle-btn ${funnelMode==='cumulative'?'active':''}`} onClick={()=>setFunnelMode('cumulative')}>Cumulative</div>
+            </div>
+          </div>
+          <div className="section-body">
+            <FunnelChart steps={FUNNEL_STEPS} onStepClick={handleStepClick} selectedStep={selectedStep}/>
+          </div>
+        </div>
+
+        <div style={{display:'flex',flexDirection:'column',gap:20}}>
+          {/* Trend */}
+          <div className="section">
+            <div className="section-header">
+              <div className="section-title">Тренд по времени</div>
+              <div className="section-actions">
+                {trendOptions.map(t => (
+                  <div key={t.key} className={`toggle-btn ${trendMetric===t.key?'active':''}`}
+                    style={{cursor:'pointer',padding:'4px 10px',borderRadius:4,fontSize:11,color:trendMetric===t.key?'var(--bg)':t.color,background:trendMetric===t.key?t.color:'transparent',border:`1px solid ${t.color}`,transition:'all .15s'}}
+                    onClick={()=>setTrendMetric(t.key)}>
+                    {t.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="section-body">
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={TREND_DATA}>
+                  <XAxis dataKey="date" tick={{fill:'#4a6d94',fontSize:10}} axisLine={false} tickLine={false}/>
+                  <YAxis tick={{fill:'#4a6d94',fontSize:10}} axisLine={false} tickLine={false} domain={['auto','auto']} tickFormatter={v=>`${v}%`}/>
+                  <Tooltip contentStyle={{background:'#0d1520',border:'1px solid #1e3050',borderRadius:8,fontSize:11}} formatter={v=>[`${v}%`,selectedTrend.label]}/>
+                  <Line type="monotone" dataKey={trendMetric} stroke={selectedTrend.color} strokeWidth={2} dot={{fill:selectedTrend.color,r:3}} activeDot={{r:5}}/>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Branching after engaged */}
+          <div className="section">
+            <div className="section-header">
+              <div className="section-title">Куда идут после Engaged Visit</div>
+            </div>
+            <div className="section-body">
+              <PathFlow title="" paths={afterEngaged}/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* First Meaningful Interaction */}
+      <div className="section">
+        <div className="section-header">
+          <div>
+            <div className="section-title">First Meaningful Interaction</div>
+            <div className="section-subtitle">Первое взаимодействие и downstream-конверсия</div>
+          </div>
+        </div>
+        <div className="section-body">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Тип первого взаимодействия</th>
+                <th>Доля сессий</th>
+                <th>Dep после %</th>
+                <th>First Bet %</th>
+                <th>Сигнал</th>
+              </tr>
+            </thead>
+            <tbody>
+              {FIRST_INTERACTION.sort((a,b)=>b.dep_after-a.dep_after).map((item, i) => (
+                <tr key={i} onClick={() => onDrawer({
+                  title: item.name,
+                  subtitle: 'First Interaction · Downstream Analysis',
+                  formula: 'Deposit Success (after interaction) / Interactions × 100',
+                  definition: `Пользователи, чьё первое значимое взаимодействие — ${item.name}. Показывает downstream-конверсию в депозит и ставку.`,
+                  insights: [
+                    {icon:'📊', text:`${item.dep_after}% пользователей задепозитили после взаимодействия с "${item.name}"`},
+                    {icon:'🎯', text:`First bet rate ${item.bet_after}% — ${item.bet_after > 6 ? 'выше среднего' : 'ниже среднего'}`},
+                  ],
+                  hypotheses: item.dep_after > 10
+                    ? ['Усилить видимость этого элемента на первом экране', 'Проверить позиционирование на мобильных устройствах']
+                    : ['Пересмотреть messaging или CTA на этом элементе', 'Возможно attention trap — собирает клики без конверсии']
+                })}>
+                  <td className="cell-name" style={{color: item.color}}>{item.name}</td>
+                  <td><MiniBar value={item.interaction} max={35} color={item.color}/></td>
+                  <td>
+                    <span className={`cell-mono ${item.dep_after > 10 ? 'color-green' : item.dep_after > 7 ? 'color-yellow' : 'color-red'}`}>
+                      {item.dep_after}%
+                    </span>
+                  </td>
+                  <td className="cell-mono">{item.bet_after}%</td>
+                  <td>
+                    {item.dep_after > 12 && <span className="badge badge-green">🏆 Чемпион</span>}
+                    {item.dep_after > 7 && item.dep_after <= 12 && <span className="badge badge-blue">✓ Работает</span>}
+                    {item.dep_after <= 7 && item.interaction > 15 && <span className="badge badge-yellow">⚠ Attention Trap</span>}
+                    {item.dep_after <= 7 && item.interaction <= 15 && <span className="badge badge-red">↓ Слабый</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Page2UXFeatures({ onDrawer }) {
+  const [selectedZone, setSelectedZone] = useState(null);
+  const zones = ['Все', 'homepage', 'discovery', 'navigation', 'bonuses', 'vip', 'app', 'referral'];
+  const [zone, setZone] = useState('Все');
+
+  const filtered = zone === 'Все' ? UX_FEATURES : UX_FEATURES.filter(f => f.zone === zone);
+
+  const scatterData = UX_FEATURES.map(f => ({
+    x: f.ctr, y: f.downstream_dep, name: f.name, color: f.attention_trap ? COLORS.accent4 : f.hidden_winner ? COLORS.accent3 : COLORS.accent
+  }));
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      <div className="kpi-row">
+        <KPICard title="Attention Traps" value="2" delta={0} sub="высокий CTR, низкий downstream" color={COLORS.accent4}/>
+        <KPICard title="Hidden Winners" value="3" delta={+1} sub="низкий CTR, сильный downstream" color={COLORS.accent3}/>
+        <KPICard title="Champions" value="2" delta={0} sub="высокий CTR + downstream" color={COLORS.accent}/>
+        <KPICard title="Avg Feature CTR" value="13.8%" delta={+0.7} color={COLORS.accent2}/>
+      </div>
+
+      <div className="grid-1-2">
+        {/* Feature Matrix Scatter */}
+        <div className="section">
+          <div className="section-header">
+            <div>
+              <div className="section-title">Feature Matrix</div>
+              <div className="section-subtitle">CTR vs Downstream Deposit CR</div>
+            </div>
+          </div>
+          <div className="section-body">
+            <div style={{fontSize:10,color:'var(--text3)',marginBottom:8,display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
+              <div style={{textAlign:'center',padding:'4px',background:'rgba(245,158,11,0.1)',borderRadius:4}}>⚠ Attention Traps<br/>(высокий CTR, низкий ↓)</div>
+              <div style={{textAlign:'center',padding:'4px',background:'rgba(0,229,255,0.1)',borderRadius:4}}>🏆 Champions<br/>(высокий CTR + ↓)</div>
+              <div style={{textAlign:'center',padding:'4px',background:'rgba(75,75,75,0.15)',borderRadius:4}}>💀 Dead Weight<br/>(всё низкое)</div>
+              <div style={{textAlign:'center',padding:'4px',background:'rgba(16,185,129,0.1)',borderRadius:4}}>💎 Hidden Winners<br/>(низкий CTR, сильный ↓)</div>
+            </div>
+            <ResponsiveContainer width="100%" height={260}>
+              <ScatterChart margin={{top:10,right:20,bottom:20,left:20}}>
+                <CartesianGrid stroke="rgba(30,48,80,0.5)" strokeDasharray="4 4"/>
+                <XAxis dataKey="x" name="CTR%" tick={{fill:'#4a6d94',fontSize:10}} axisLine={false} tickLine={false} label={{value:'CTR %',position:'bottom',fill:'#4a6d94',fontSize:10}} domain={[0,35]}/>
+                <YAxis dataKey="y" name="Downstream%" tick={{fill:'#4a6d94',fontSize:10}} axisLine={false} tickLine={false} label={{value:'Dep CR %',angle:-90,position:'left',fill:'#4a6d94',fontSize:10}} domain={[0,20]}/>
+                <ReferenceLine x={15} stroke="rgba(255,255,255,0.1)" strokeDasharray="4 4"/>
+                <ReferenceLine y={8} stroke="rgba(255,255,255,0.1)" strokeDasharray="4 4"/>
+                <Tooltip contentStyle={{background:'#0d1520',border:'1px solid #1e3050',borderRadius:8,fontSize:11}}
+                  formatter={(v,n,p) => [v+'%', p.payload.name]}/>
+                <Scatter data={scatterData} fill={COLORS.accent}>
+                  {scatterData.map((entry, i) => (
+                    <Cell key={i} fill={entry.color}/>
+                  ))}
+                </Scatter>
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Ranked Table */}
+        <div className="section">
+          <div className="section-header">
+            <div className="section-title">Производительность UX-зон</div>
+            <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+              {zones.map(z => (
+                <div key={z} className={`filter-chip ${zone===z?'active':''}`} style={{fontSize:10,padding:'2px 8px'}} onClick={()=>setZone(z)}>{z}</div>
+              ))}
+            </div>
+          </div>
+          <div className="section-body" style={{padding:0}}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>UX-зона</th>
+                  <th>Impression</th>
+                  <th>CTR</th>
+                  <th>Close/Open</th>
+                  <th>Dep↓</th>
+                  <th>Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((f, i) => (
+                  <tr key={i} className={selectedZone===f.name?'selected':''} onClick={() => {
+                    setSelectedZone(f.name);
+                    onDrawer({
+                      title: f.name,
+                      subtitle: `UX Zone · ${f.zone}`,
+                      formula: 'Downstream Deposit CR = Dep Success (after interaction) / Interactions × 100',
+                      definition: `UX-зона "${f.name}". Impression rate — доля сессий где зона была видна. CTR — клики от exposed. Downstream — депозит после взаимодействия.`,
+                      insights: [
+                        {icon:'👁', text:`Impression rate: ${f.impression}% сессий видят этот элемент`},
+                        {icon:'🖱', text:`CTR: ${f.ctr}% из увидевших кликают`},
+                        {icon:'💰', text:`Downstream dep: ${f.downstream_dep}% завершают депозит после взаимодействия`},
+                        f.attention_trap ? {icon:'⚠', text:'ATTENTION TRAP: высокий CTR но низкая downstream конверсия. Пересмотреть контент или CTA.'} : null,
+                        f.hidden_winner ? {icon:'💎', text:'HIDDEN WINNER: низкий CTR но высокая downstream. Стоит увеличить visibility.'} : null,
+                        f.device_flag ? {icon:'📱', text:'Значительная разница между mobile и desktop. Проверить mobile UX.'} : null,
+                      ].filter(Boolean),
+                      hypotheses: f.attention_trap
+                        ? ['Контент не соответствует ожиданиям после клика', 'CTA ведёт не туда куда ожидает пользователь', 'Нужен редизайн value proposition']
+                        : f.hidden_winner
+                        ? ['Увеличить видимость — разместить выше или prominent', 'Добавить больше entry points к этому элементу', 'A/B тест: более заметное размещение']
+                        : ['Оптимизировать контент для downstream конверсии', 'Проверить CTA и next step после взаимодействия'],
+                    })
+                  }}>
+                    <td className="cell-name">{f.name}</td>
+                    <td className="cell-mono">{f.impression}%</td>
+                    <td className="cell-mono">{f.ctr}%</td>
+                    <td className="cell-mono" style={{color: f.close_rate > 50 ? 'var(--negative)' : 'var(--text2)'}}>{f.close_rate}%</td>
+                    <td className="cell-mono" style={{color: f.downstream_dep > 10 ? 'var(--positive)' : f.downstream_dep > 6 ? 'var(--warning)' : 'var(--negative)'}}>{f.downstream_dep}%</td>
+                    <td>
+                      {f.attention_trap && <span className="badge badge-yellow">Attention Trap</span>}
+                      {f.hidden_winner && <span className="badge badge-green">Hidden Winner</span>}
+                      {!f.attention_trap && !f.hidden_winner && f.downstream_dep > 10 && <span className="badge badge-blue">Champion</span>}
+                      {!f.attention_trap && !f.hidden_winner && f.downstream_dep <= 5 && <span className="badge badge-red">Weak</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Page3RegProfile({ onDrawer }) {
+  const [tab, setTab] = useState('reg');
+  const tabs = [
+    { key: 'reg', label: 'Регистрация' },
+    { key: 'login', label: 'Логин' },
+    { key: 'profile', label: 'Профиль / KYC' },
+  ];
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      <div className="kpi-row">
+        <KPICard title="Reg Complete CR" value="42.3%" delta={+0.8} sub="от modal open" color={COLORS.accent}/>
+        <KPICard title="Поле Пароль Drop" value="18.2%" delta={-1.2} sub="дроп на поле пароля" color={COLORS.accent5}/>
+        <KPICard title="Валид. ошибки" value="31.8%" delta={+2.1} sub="на поле пароля" color={COLORS.accent4}/>
+        <KPICard title="KYC Complete" value="34.7%" delta={-1.8} sub="от KYC start" color={COLORS.accent3}/>
+        <KPICard title="Dep после KYC" value="61.4%" delta={+3.2} sub="dep intent после KYC" color={COLORS.accent2}/>
+      </div>
+
+      <div className="section">
+        <div className="tabs">
+          {tabs.map(t => <div key={t.key} className={`tab ${tab===t.key?'active':''}`} onClick={()=>setTab(t.key)}>{t.label}</div>)}
+        </div>
+        {tab === 'reg' && (
+          <div className="section-body">
+            <div className="grid-1-2">
+              <div>
+                <div style={{fontWeight:700,fontSize:12,color:'var(--text2)',marginBottom:12}}>Воронка регистрации</div>
+                <FunnelChart steps={REG_FUNNEL.map(s=>({...s,id:s.step}))} onStepClick={s=>onDrawer({
+                  title: s.step,
+                  subtitle: 'Registration Funnel',
+                  formula: `${s.step} CR = Events / Modal Impressions × 100`,
+                  definition: `Шаг "${s.step}" в воронке регистрации. CR ${s.cr}% от открытия модала.`,
+                  insights: [{icon:'📊', text:`CR этого шага: ${s.cr}%`},{icon:'💡', text:'Кликни на следующий шаг чтобы увидеть дроп между шагами'}],
+                  hypotheses: ['Упростить UX этого шага', 'Проверить валидацию и error messaging', 'A/B тест placeholder-текстов в полях']
+                })}/>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:16}}>
+                <div>
+                  <div style={{fontWeight:700,fontSize:12,color:'var(--text2)',marginBottom:12}}>Фрикция по полям</div>
+                  <table className="data-table">
+                    <thead>
+                      <tr><th>Поле</th><th>Drop Rate</th><th>Error Rate</th><th>Диагноз</th></tr>
+                    </thead>
+                    <tbody>
+                      {FIELD_FRICTION.map((f,i)=>(
+                        <tr key={i} onClick={()=>onDrawer({
+                          title: f.label,
+                          subtitle: 'Field Friction Analysis',
+                          formula: `Drop Rate = (Users who left at this field / Users who reached this field) × 100`,
+                          definition: `Дроп и ошибки на поле "${f.label}"`,
+                          insights: [
+                            {icon:'📉', text:`${f.drop_rate}% пользователей дропаются на этом поле`},
+                            {icon:'❌', text:`${f.error_rate}% получают validation error`},
+                          ],
+                          hypotheses: f.error_rate > 30
+                            ? ['Слишком строгая валидация — упростить требования', 'Добавить inline-подсказки', 'Real-time validation вместо после submit']
+                            : ['Проверить UX copy в placeholder', 'Убедиться в работе autofill']
+                        })}>
+                          <td className="cell-name">{f.field}</td>
+                          <td className="cell-mono" style={{color:f.drop_rate>15?'var(--negative)':'var(--text2)'}}>{f.drop_rate}%</td>
+                          <td className="cell-mono" style={{color:f.error_rate>25?'var(--negative)':f.error_rate>15?'var(--warning)':'var(--text2)'}}>{f.error_rate}%</td>
+                          <td>
+                            {f.error_rate>30 && <span className="badge badge-red">Высокая фрикция</span>}
+                            {f.error_rate>15 && f.error_rate<=30 && <span className="badge badge-yellow">Умеренно</span>}
+                            {f.error_rate<=15 && <span className="badge badge-green">ОК</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <div style={{fontWeight:700,fontSize:12,color:'var(--text2)',marginBottom:12}}>Entry Point → Reg Complete → Dep Intent</div>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={REG_ENTRY_POINTS} layout="vertical">
+                      <XAxis type="number" tick={{fill:'#4a6d94',fontSize:10}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}%`}/>
+                      <YAxis type="category" dataKey="source" tick={{fill:'#8ba8c8',fontSize:10}} axisLine={false} tickLine={false} width={100}/>
+                      <Tooltip contentStyle={{background:'#0d1520',border:'1px solid #1e3050',borderRadius:8,fontSize:11}}/>
+                      <Bar dataKey="dep_after" name="Dep After %" fill={COLORS.accent3} radius={[0,3,3,0]}/>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {tab === 'login' && (
+          <div className="section-body">
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
+              {[
+                {method:'Email/пароль',success:74.2,fail:18.4,forgot:7.4},
+                {method:'Google',success:88.7,fail:8.1,forgot:3.2},
+                {method:'Telegram',success:91.4,fail:6.2,forgot:2.4},
+              ].map((m,i)=>(
+                <div key={i} className="section" style={{cursor:'pointer'}} onClick={()=>onDrawer({
+                  title: m.method,
+                  subtitle: 'Login Method Analysis',
+                  formula: 'Login Success Rate = Login Success / Login Attempts × 100',
+                  definition: `Метод входа "${m.method}". Показывает качество UX авторизации.`,
+                  insights: [
+                    {icon:'✅', text:`Success rate: ${m.success}%`},
+                    {icon:'❌', text:`Fail rate: ${m.fail}%`},
+                    {icon:'🔑', text:`Forgot password click: ${m.forgot}%`},
+                  ],
+                  hypotheses: m.success < 80
+                    ? ['Высокий fail rate — проверить error messaging', 'Добавить forgot password prominence', 'Проверить password requirements']
+                    : ['Хорошие результаты — фокус на увеличении adoption этого метода']
+                })}>
+                  <div className="section-header" style={{padding:'12px 16px'}}>
+                    <div className="section-title" style={{fontSize:12}}>{m.method}</div>
+                  </div>
+                  <div className="section-body" style={{padding:'12px 16px'}}>
+                    <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                      <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
+                        <span style={{color:'var(--text3)'}}>Success</span>
+                        <span style={{color:'var(--positive)',fontFamily:'var(--mono)'}}>{m.success}%</span>
+                      </div>
+                      <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
+                        <span style={{color:'var(--text3)'}}>Fail</span>
+                        <span style={{color:'var(--negative)',fontFamily:'var(--mono)'}}>{m.fail}%</span>
+                      </div>
+                      <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
+                        <span style={{color:'var(--text3)'}}>Forgot pwd</span>
+                        <span style={{color:'var(--warning)',fontFamily:'var(--mono)'}}>{m.forgot}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {tab === 'profile' && (
+          <div className="section-body">
+            <div className="grid-2">
+              <div>
+                <div style={{fontWeight:700,fontSize:12,color:'var(--text2)',marginBottom:12}}>KYC Воронка</div>
+                {[
+                  {step:'KYC Start',cr:100},{step:'Загрузка документа',cr:72.4},{step:'Верификация',cr:58.1},{step:'KYC Complete',cr:34.7}
+                ].map((s,i,arr)=>(
+                  <div key={i}>
+                    {i>0 && <div style={{height:8,width:2,background:'var(--border)',margin:'0 auto 0 20px'}}/>}
+                    <div style={{display:'flex',alignItems:'center',gap:12,padding:'8px 10px',borderRadius:8,cursor:'pointer',background: i===3 ? 'rgba(16,185,129,0.05)': undefined}}
+                      onClick={()=>onDrawer({title:s.step,subtitle:'KYC Funnel',formula:`${s.step} / KYC Start × 100`,definition:`Шаг KYC: ${s.step}`,insights:[{icon:'📊',text:`${s.cr}% от начала KYC`}],hypotheses:['Упростить загрузку документов','Добавить прогресс-индикатор','Уведомить о статусе верификации']})}>
+                      <div style={{minWidth:180,fontSize:12,color:'var(--text2)'}}>{s.step}</div>
+                      <div style={{flex:1,height:24,background:'var(--surface2)',borderRadius:4,overflow:'hidden'}}>
+                        <div style={{width:`${s.cr}%`,height:'100%',background: i===3?COLORS.accent3:COLORS.accent,borderRadius:4,display:'flex',alignItems:'center',paddingLeft:8,fontSize:10,color:'rgba(0,0,0,0.8)',fontWeight:700}}>{s.cr}%</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div style={{fontWeight:700,fontSize:12,color:'var(--text2)',marginBottom:12}}>Влияние KYC на дальнейшую конверсию</div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={[
+                    {name:'Без KYC',dep_intent:28.4,dep_success:12.1},
+                    {name:'KYC Complete',dep_intent:61.4,dep_success:48.2},
+                  ]} barGap={4}>
+                    <XAxis dataKey="name" tick={{fill:'#8ba8c8',fontSize:11}} axisLine={false} tickLine={false}/>
+                    <YAxis tick={{fill:'#4a6d94',fontSize:10}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}%`}/>
+                    <Tooltip contentStyle={{background:'#0d1520',border:'1px solid #1e3050',borderRadius:8,fontSize:11}}/>
+                    <Bar dataKey="dep_intent" name="Dep Intent" fill={COLORS.accent2} radius={[4,4,0,0]}/>
+                    <Bar dataKey="dep_success" name="Dep Success" fill={COLORS.accent3} radius={[4,4,0,0]}/>
+                  </BarChart>
+                </ResponsiveContainer>
+                <div style={{fontSize:11,color:'var(--text3)',marginTop:8}}>KYC-пользователи показывают значительно выше dep intent и success</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Page4Bonuses({ onDrawer }) {
+  const [tab, setTab] = useState('bonuses');
+  const tabs = [{key:'bonuses',label:'Бонусы'},{key:'store',label:'Магазин'},{key:'promos',label:'Промо'},{key:'tournaments',label:'Турниры'}];
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      <div className="kpi-row">
+        <KPICard title="Bonus Apply Rate" value="34.2%" delta={+1.8} sub="от card open" color={COLORS.accent}/>
+        <KPICard title="Blocked Rate" value="8.2%" delta={-0.4} sub="от apply click" color={COLORS.accent5}/>
+        <KPICard title="Dep после бонуса" value="14.8%" delta={+2.1} sub="after bonus apply" color={COLORS.accent3}/>
+        <KPICard title="Store Purchase" value="22.4%" delta={+0.8} sub="от purchase attempt" color={COLORS.accent2}/>
+      </div>
+
+      <div className="section">
+        <div className="tabs">
+          {tabs.map(t=><div key={t.key} className={`tab ${tab===t.key?'active':''}`} onClick={()=>setTab(t.key)}>{t.label}</div>)}
+        </div>
+
+        {tab==='bonuses' && (
+          <div className="section-body">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Тип бонуса</th>
+                  <th>Page Open</th>
+                  <th>Card Open</th>
+                  <th>Условия</th>
+                  <th>Apply</th>
+                  <th>Blocked</th>
+                  <th>Dep After</th>
+                  <th>Dep Success</th>
+                </tr>
+              </thead>
+              <tbody>
+                {BONUS_TYPES.map((b,i)=>(
+                  <tr key={i} onClick={()=>onDrawer({
+                    title: b.type + ' Bonus',
+                    subtitle: 'Bonus Funnel Analysis',
+                    formula: 'Apply Rate = Apply Click / Card Open × 100',
+                    definition: `Воронка бонуса "${b.type}". Показывает конверсию по шагам и downstream-эффект.`,
+                    insights: [
+                      {icon:'📊', text:`Apply rate: ${b.apply}% от card open`},
+                      {icon:'❌', text:`Blocked rate: ${b.blocked}% — eligibility или technical issues`},
+                      {icon:'💰', text:`Dep после бонуса: ${b.dep_after}%`},
+                    ],
+                    hypotheses: b.blocked > 15
+                      ? ['Высокий blocked rate — пересмотреть eligibility conditions', 'Показывать условия ДО кнопки Apply', 'Добавить pre-check eligibility без клика']
+                      : ['Оптимизировать messaging на карточке', 'A/B тест CTA button copy']
+                  })}>
+                    <td className="cell-name">{b.type}</td>
+                    <td className="cell-mono">{b.page_open}%</td>
+                    <td className="cell-mono">{b.card_open}%</td>
+                    <td className="cell-mono">{b.conditions}%</td>
+                    <td className="cell-mono">{b.apply}%</td>
+                    <td className="cell-mono" style={{color:b.blocked>15?'var(--negative)':b.blocked>8?'var(--warning)':'var(--positive)'}}>{b.blocked}%</td>
+                    <td className="cell-mono" style={{color:b.dep_after>15?'var(--positive)':b.dep_after>10?'var(--warning)':'var(--negative)'}}>{b.dep_after}%</td>
+                    <td className="cell-mono" style={{color:'var(--positive)'}}>{b.dep_success}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {tab==='store' && (
+          <div className="section-body">
+            <div className="grid-2">
+              <div>
+                <div style={{fontWeight:700,fontSize:12,color:'var(--text2)',marginBottom:12}}>Воронка магазина</div>
+                <FunnelChart steps={STORE_FUNNEL.map((s,i)=>({id:`store_${i}`,label:s.step,cr:s.cr,color:i===5?COLORS.accent3:COLORS.accent}))}
+                  onStepClick={s=>onDrawer({title:s.label,subtitle:'Store Funnel',formula:'Step CR = Step Events / Store Open × 100',definition:`Шаг магазина: ${s.label}. CR: ${s.cr}%`,insights:[{icon:'📊',text:`${s.cr}% от открытия магазина достигают этого шага`}],hypotheses:['Упростить навигацию в магазине','Показать popular items на главном экране магазина','Добавить фильтры по цене/типу']})}
+                />
+              </div>
+              <div>
+                <div style={{fontWeight:700,fontSize:12,color:'var(--text2)',marginBottom:12}}>Источники входа в магазин</div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={STORE_ENTRY} layout="vertical">
+                    <XAxis type="number" tick={{fill:'#4a6d94',fontSize:10}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}%`}/>
+                    <YAxis type="category" dataKey="source" tick={{fill:'#8ba8c8',fontSize:11}} axisLine={false} tickLine={false} width={100}/>
+                    <Tooltip contentStyle={{background:'#0d1520',border:'1px solid #1e3050',borderRadius:8,fontSize:11}}/>
+                    <Bar dataKey="pct" name="Доля входов" fill={COLORS.accent2} radius={[0,4,4,0]}/>
+                  </BarChart>
+                </ResponsiveContainer>
+                <div style={{marginTop:16}}>
+                  <div style={{fontSize:10,color:'var(--text3)',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px',marginBottom:8}}>Путь после магазина</div>
+                  <PathFlow title="" paths={[{from:'После покупки',segments:[
+                    {label:'Game Start',pct:48},{label:'Dep Intent',pct:22},{label:'Tasks',pct:18},{label:'Exit',pct:12}
+                  ]}]}/>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab==='promos' && (
+          <div className="section-body">
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12}}>
+              {['Активные','Будущие','Архив'].map((status,si)=>(
+                <div key={si}>
+                  <div style={{fontSize:11,fontWeight:700,color:si===0?COLORS.accent3:si===1?COLORS.accent:COLORS.text3,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.8px'}}>{status}</div>
+                  {[0,1,2].map(i=>(
+                    <div key={i} style={{background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,padding:'10px 12px',marginBottom:8,cursor:'pointer'}}
+                      onClick={()=>onDrawer({title:`Promo ${status} #${i+1}`,subtitle:'Promo Analysis',formula:'Participation Rate = Participation Click / Promo Page Open × 100',definition:'Воронка промо-акции.',insights:[{icon:'📊',text:`Page open rate: ${[48,31,22][i]}%`},{icon:'🎯',text:`Participation: ${[28,18,12][i]}%`}],hypotheses:['Улучшить landing page промо','Добавить countdown timer','Показывать условия участия ярче']})}>
+                      <div style={{fontSize:12,color:'var(--text)',fontWeight:600,marginBottom:4}}>Promo {String.fromCharCode(65+i)}</div>
+                      <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'var(--text3)'}}>
+                        <span>Open: {[48,31,22][i]}%</span>
+                        <span>Part: {[28,18,12][i]}%</span>
+                        <span>Dep↓: {[14,9,6][i]}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab==='tournaments' && (
+          <div className="section-body">
+            <table className="data-table">
+              <thead>
+                <tr><th>Турнир</th><th>Open</th><th>Условия</th><th>Участие</th><th>Dep после</th><th>Game Start</th></tr>
+              </thead>
+              <tbody>
+                {['Weekly Slots Battle','Crash Tournament','Live Casino Cup'].map((t,i)=>(
+                  <tr key={i} onClick={()=>onDrawer({title:t,subtitle:'Tournament Funnel',formula:'Participation Rate = Participation Click / Tournament Open × 100',definition:`Воронка турнира "${t}"`,insights:[{icon:'📊',text:`Open: ${[61,44,38][i]}% / Участие: ${[32,24,18][i]}%`}],hypotheses:['Улучшить описание призов','Добавить leaderboard preview','Remind об окончании']})}>
+                    <td className="cell-name">{t}</td>
+                    <td className="cell-mono">{[61,44,38][i]}%</td>
+                    <td className="cell-mono">{[42,28,21][i]}%</td>
+                    <td className="cell-mono" style={{color:COLORS.accent3}}>{[32,24,18][i]}%</td>
+                    <td className="cell-mono">{[18,12,9][i]}%</td>
+                    <td className="cell-mono">{[44,34,28][i]}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Page5GameDiscovery({ onDrawer }) {
+  const [sortBy, setSortBy] = useState('first_bet');
+  const sorted = [...DISCOVERY_SECTIONS].sort((a,b)=>b[sortBy]-a[sortBy]);
+  const sortKeys = [
+    {key:'first_bet',label:'First Bet'},
+    {key:'real',label:'Real Start'},
+    {key:'click',label:'CTR'},
+    {key:'impression',label:'Impression'},
+  ];
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      <div className="kpi-row">
+        <KPICard title="Top Section" value="Heated" delta={+2.1} sub="по first bet CR" color={COLORS.accent}/>
+        <KPICard title="Avg Section→Bet" value="8.4%" delta={+0.6} sub="section click to first bet" color={COLORS.accent3}/>
+        <KPICard title="Demo→Real Rate" value="68.4%" delta={+1.2} sub="конверсия demo в real" color={COLORS.accent2}/>
+        <KPICard title="Return Rate" value="21.4%" delta={-0.8} sub="возврат в каталог без ставки" color={COLORS.accent4}/>
+      </div>
+
+      <div className="section">
+        <div className="section-header">
+          <div>
+            <div className="section-title">Производительность секций по game discovery</div>
+            <div className="section-subtitle">Сортировка по: {sortKeys.find(s=>s.key===sortBy)?.label}</div>
+          </div>
+          <div style={{display:'flex',gap:4}}>
+            {sortKeys.map(s=>(
+              <div key={s.key} className={`filter-chip ${sortBy===s.key?'active':''}`} style={{fontSize:10,padding:'2px 8px'}} onClick={()=>setSortBy(s.key)}>{s.label}</div>
+            ))}
+          </div>
+        </div>
+        <div className="section-body" style={{padding:0}}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Секция</th>
+                <th>Impression</th>
+                <th>Section CTR</th>
+                <th>Game Open</th>
+                <th>Demo</th>
+                <th>Real Start</th>
+                <th>First Bet</th>
+                <th>Return</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((s,i)=>(
+                <tr key={i} onClick={()=>onDrawer({
+                  title: s.name,
+                  subtitle: 'Game Discovery Section',
+                  formula: 'Section→FirstBet CR = First Bet / Section Impression × 100',
+                  definition: `Секция "${s.name}". Путь от impression до первой реальной ставки.`,
+                  insights: [
+                    {icon:'👁', text:`Impression: ${s.impression}% сессий видят эту секцию`},
+                    {icon:'🖱', text:`CTR: ${s.click}% кликают на секцию`},
+                    {icon:'🎮', text:`${s.real}% открывают real game / ${s.first_bet}% делают ставку`},
+                    s.return > 40 ? {icon:'⚠', text:`Высокий return rate ${s.return}% — пользователи уходят обратно. Возможно не находят нужную игру.`} : {icon:'✅', text:'Нормальный return rate'},
+                  ],
+                  hypotheses: s.first_bet < 5
+                    ? ['Добавить real-time info о выигрышах', 'Улучшить game card thumbnails', 'Добавить bet limits visibility']
+                    : ['Оптимальная секция — рассмотреть расширение её видимости', 'Тестировать размещение выше']
+                })}>
+                  <td style={{color:'var(--text3)',fontFamily:'var(--mono)',fontSize:11}}>{i+1}</td>
+                  <td className="cell-name">{s.name}</td>
+                  <td className="cell-mono">{s.impression}%</td>
+                  <td className="cell-mono">{s.click}%</td>
+                  <td className="cell-mono">{s.game_open}%</td>
+                  <td className="cell-mono" style={{color:'var(--text3)'}}>{s.demo}%</td>
+                  <td className="cell-mono" style={{color:COLORS.accent2}}>{s.real}%</td>
+                  <td>
+                    <MiniBar value={s.first_bet} max={20} color={s.first_bet > 12 ? COLORS.accent3 : s.first_bet > 8 ? COLORS.accent4 : COLORS.accent5}/>
+                  </td>
+                  <td className="cell-mono" style={{color:s.return>40?'var(--negative)':'var(--text3)'}}>{s.return}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="grid-2">
+        <div className="section">
+          <div className="section-header">
+            <div className="section-title">Discovery Source → First Bet</div>
+          </div>
+          <div className="section-body">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={[
+                {source:'Homepage section',first_bet:9.4},{source:'Promo-driven',first_bet:12.8},{source:'Bonus-driven',first_bet:14.2},{source:'Story-driven',first_bet:11.1},{source:'Search',first_bet:16.4},{source:'Direct',first_bet:8.1},
+              ]} layout="vertical">
+                <XAxis type="number" tick={{fill:'#4a6d94',fontSize:10}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}%`}/>
+                <YAxis type="category" dataKey="source" tick={{fill:'#8ba8c8',fontSize:10}} axisLine={false} tickLine={false} width={110}/>
+                <Tooltip contentStyle={{background:'#0d1520',border:'1px solid #1e3050',borderRadius:8,fontSize:11}}/>
+                <Bar dataKey="first_bet" name="First Bet CR" fill={COLORS.accent3} radius={[0,4,4,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="section">
+          <div className="section-header">
+            <div className="section-title">Путь после открытия игры</div>
+          </div>
+          <div className="section-body">
+            <PathFlow title="" paths={[
+              {from:'Game Open', segments:[
+                {label:'First Real Bet',pct:42},{label:'Demo Start',pct:24},{label:'Return to Catalog',pct:18},{label:'Dep Intent',pct:10},{label:'Exit',pct:6}
+              ]}
+            ]}/>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Page6Deposit({ onDrawer }) {
+  const [selectedMethod, setSelectedMethod] = useState(null);
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      <div className="kpi-row">
+        <KPICard title="Deposit Success" value="44.8%" delta={+1.2} sub="от deposit open" color={COLORS.accent3}/>
+        <KPICard title="Abandon Rate" value="28.4%" delta={-0.8} sub="от deposit open" color={COLORS.accent5}/>
+        <KPICard title="Fail Rate" value="26.8%" delta={+0.4} sub="от deposit open" color={COLORS.accent4}/>
+        <KPICard title="Retry Rate" value="42.1%" delta={+1.8} sub="от failed deposits" color={COLORS.accent}/>
+        <KPICard title="Success After Retry" value="58.4%" delta={+2.1} sub="от retry attempts" color={COLORS.accent2}/>
+        <KPICard title="Post-Dep First Bet" value="82.4%" delta={+0.6} sub="game → first bet" color={COLORS.accent3}/>
+      </div>
+
+      <div className="grid-1-2">
+        <div className="section">
+          <div className="section-header">
+            <div className="section-title">Deposit Step Funnel</div>
+          </div>
+          <div className="section-body">
+            <FunnelChart steps={DEPOSIT_FUNNEL.map(s=>({...s,id:s.step}))} onStepClick={s=>onDrawer({
+              title: s.step,
+              subtitle: 'Deposit Funnel',
+              formula: `${s.step} CR = Events / Deposit Open × 100`,
+              definition: `Шаг депозитной воронки: ${s.step}. CR ${s.cr}%.`,
+              insights: [{icon:'📊',text:`${s.cr}% от открытия депозита достигают этого шага`}],
+              hypotheses: s.cr < 70
+                ? ['Упростить UX этого шага', 'Проверить ошибки на этом шаге', 'Анализировать exit по device type']
+                : ['Шаг работает хорошо — фокус на следующем']
+            })}/>
+          </div>
+        </div>
+
+        <div style={{display:'flex',flexDirection:'column',gap:20}}>
+          <div className="section">
+            <div className="section-header">
+              <div className="section-title">Payment Methods · Success Rate</div>
+            </div>
+            <div className="section-body" style={{padding:0}}>
+              <table className="data-table">
+                <thead>
+                  <tr><th>Метод</th><th>Success</th><th>Fail</th><th>Abandon</th><th>Retry</th><th>Top Error</th></tr>
+                </thead>
+                <tbody>
+                  {PAYMENT_METHODS.map((m,i)=>(
+                    <tr key={i} className={selectedMethod===m.method?'selected':''} onClick={()=>{
+                      setSelectedMethod(m.method);
+                      onDrawer({
+                        title: m.method,
+                        subtitle: 'Payment Method Analysis',
+                        formula: 'Success Rate = Successful Deposits / Submit Attempts × 100',
+                        definition: `Анализ платёжного метода "${m.method}"`,
+                        insights: [
+                          {icon:'✅', text:`Success rate: ${m.success}%`},
+                          {icon:'❌', text:`Fail rate: ${m.fail}% | Top error: ${m.error_top}`},
+                          {icon:'🔄', text:`Retry rate: ${m.retry}% — после fail ${m.retry}% пробуют снова`},
+                          m.success < 60 ? {icon:'🚨', text:'Низкий success rate — требует приоритетного расследования'} : null,
+                        ].filter(Boolean),
+                        hypotheses: m.success < 70
+                          ? ['Проверить provider integration', 'Добавить fallback provider', 'Улучшить error messaging после fail', 'Предложить alternative method после fail']
+                          : ['Метод работает хорошо — увеличить visibility в deposit flow']
+                      });
+                    }}>
+                      <td className="cell-name" style={{color:m.color}}>{m.method}</td>
+                      <td><MiniBar value={m.success} max={100} color={m.success>75?COLORS.accent3:m.success>60?COLORS.accent4:COLORS.accent5}/></td>
+                      <td className="cell-mono" style={{color:'var(--negative)'}}>{m.fail}%</td>
+                      <td className="cell-mono" style={{color:'var(--warning)'}}>{m.abandon}%</td>
+                      <td className="cell-mono">{m.retry}%</td>
+                      <td style={{fontSize:10,color:'var(--text3)'}}>{m.error_top}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid-2">
+        <div className="section">
+          <div className="section-header">
+            <div className="section-title">Error Distribution</div>
+            <div className="section-subtitle">Частота vs Влияние на конверсию</div>
+          </div>
+          <div className="section-body">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={ERROR_TYPES} barGap={4}>
+                <XAxis dataKey="type" tick={{fill:'#8ba8c8',fontSize:10}} axisLine={false} tickLine={false}/>
+                <YAxis tick={{fill:'#4a6d94',fontSize:10}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}%`}/>
+                <Tooltip contentStyle={{background:'#0d1520',border:'1px solid #1e3050',borderRadius:8,fontSize:11}}/>
+                <Bar dataKey="freq" name="Частота" fill={COLORS.accent4} radius={[4,4,0,0]}/>
+                <Bar dataKey="impact" name="Impact на conv" fill={COLORS.accent5} radius={[4,4,0,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="section">
+          <div className="section-header">
+            <div className="section-title">Device × Method Heatmap (Success %)</div>
+          </div>
+          <div className="section-body">
+            <HeatmapChart rows={HEATMAP_DEVICES} cols={HEATMAP_METHODS} values={HEATMAP_VALUES}/>
+          </div>
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="section-header">
+          <div className="section-title">Путь после неуспешного депозита</div>
+        </div>
+        <div className="section-body">
+          <PathFlow title="" paths={[
+            {from:'Fail → действие', segments:[
+              {label:'Retry same',pct:42},{label:'Switch method',pct:24},{label:'Support click',pct:12},{label:'Return later',pct:14},{label:'Exit',pct:8}
+            ]}
+          ]}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ MAIN APP ============
+function App() {
+  const [page, setPage] = useState(0);
+  const [drawer, setDrawer] = useState(null);
+  const [filters, setFilters] = useState({
+    project: 'FL', period: '30 дней', device: 'Все', geo: 'Все гео', lifecycle: 'Все'
+  });
+
+  const pages = [
+    { label: 'Core Journey', component: <Page1CoreJourney onDrawer={setDrawer}/> },
+    { label: 'UX Features', component: <Page2UXFeatures onDrawer={setDrawer}/> },
+    { label: 'Reg / Profile / KYC', component: <Page3RegProfile onDrawer={setDrawer}/> },
+    { label: 'Bonuses / Store', component: <Page4Bonuses onDrawer={setDrawer}/> },
+    { label: 'Game Discovery', component: <Page5GameDiscovery onDrawer={setDrawer}/> },
+    { label: 'Deposit UX', component: <Page6Deposit onDrawer={setDrawer}/> },
+  ];
+
+  return (
+    <div className="app">
+      {/* Header */}
+      <div className="header">
+        <div className="header-logo">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <rect width="8" height="8" rx="2" fill="#00e5ff"/>
+            <rect x="12" width="8" height="8" rx="2" fill="#7c3aed"/>
+            <rect y="12" width="8" height="8" rx="2" fill="#10b981"/>
+            <rect x="12" y="12" width="8" height="8" rx="2" fill="#f59e0b" opacity=".6"/>
+          </svg>
+          FL Analytics
+          <span>Product BI Dashboard · {filters.project}</span>
+        </div>
+        <div className="header-right">
+          <div style={{fontSize:11,color:'var(--text3)',fontFamily:'var(--mono)'}}>
+            {filters.period} · {filters.device} · {filters.geo}
+          </div>
+          <div className="header-badge">v2.0</div>
+        </div>
+      </div>
+
+      {/* Filter Bar */}
+      <FilterBar filters={filters} setFilters={setFilters}/>
+
+      {/* Nav */}
+      <div className="nav">
+        {pages.map((p, i) => (
+          <div key={i} className={`nav-tab ${page===i?'active':''}`} onClick={()=>setPage(i)}>
+            {p.label}
+          </div>
+        ))}
+      </div>
+
+      {/* Main */}
+      <div className="main">
+        <div className="content-area">
+          {pages[page].component}
+        </div>
+      </div>
+
+      {/* Drawer */}
+      {drawer && <DrawerOverlay item={drawer} onClose={()=>setDrawer(null)}/>}
+    </div>
+  );
+}
+
+ReactDOM.render(<App/>, document.getElementById('root'));
+</script>
+</body>
+</html>
