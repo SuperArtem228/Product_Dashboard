@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FL продуктовый дашборд</title>
+<style>
+:root {
+  --bg: #080c14;
+  --surface: #0d1520;
+  --surface-2: #121d2e;
+  --surface-3: #18263a;
+  --border: #1e3050;
+  --border-2: #294266;
+  --text: #e8f4ff;
+  --text-2: #9ab3cf;
+  --text-3: #6482a7;
+  --accent: #00e5ff;
+  --accent-2: #7c3aed;
+  --accent-3: #10b981;
+  --accent-4: #f59e0b;
+  --accent-5: #ef4444;
+  --shadow: 0 10px 24px rgba(0,0,0,.22);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 14px/1.5 Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+button, select { font: inherit; }
+body { min-height: 100vh; }
+#app { min-height: 100vh; }
+.header {
+  position: sticky; top: 0; z-index: 40; backdrop-filter: blur(10px);
+  background: rgba(8,12,20,.9); border-bottom: 1px solid var(--border);
+}
+.header-top { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px 10px; gap: 16px; }
+.logo-wrap { display: flex; align-items: center; gap: 12px; }
+.logo-badge { display: grid; grid-template-columns: repeat(2, 10px); grid-auto-rows: 10px; gap: 4px; }
+.logo-badge span:nth-child(1) { background: var(--accent); border-radius: 3px; }
+.logo-badge span:nth-child(2) { background: var(--accent-2); border-radius: 3px; }
+.logo-badge span:nth-child(3) { background: var(--accent-3); border-radius: 3px; }
+.logo-badge span:nth-child(4) { background: var(--accent-4); border-radius: 3px; opacity: .8; }
+.logo-title { font-size: 18px; font-weight: 800; letter-spacing: -.02em; }
+.logo-subtitle { color: var(--text-3); font-size: 12px; }
+.header-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.meta-pill { border: 1px solid var(--border); background: var(--surface); color: var(--text-2); border-radius: 999px; padding: 6px 10px; font-size: 12px; }
+.filter-bar { display: flex; gap: 10px; flex-wrap: wrap; padding: 0 24px 14px; }
+.filter-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.filter-group-label { font-size: 11px; text-transform: uppercase; color: var(--text-3); letter-spacing: .08em; margin-right: 4px; }
+.filter-chip {
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
+  border-radius: 999px; padding: 7px 12px; cursor: pointer; transition: .15s ease;
+}
+.filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+.filter-chip.active { background: rgba(0,229,255,.08); border-color: var(--accent); color: var(--accent); }
+.tabs { display: flex; gap: 0; padding: 0 24px; border-top: 1px solid rgba(30,48,80,.4); overflow: auto; }
+.tab {
+  padding: 14px 18px; color: var(--text-3); border-bottom: 2px solid transparent; white-space: nowrap;
+  cursor: pointer; font-weight: 600; transition: .15s ease;
+}
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.main { padding: 22px 24px 40px; max-width: 1600px; margin: 0 auto; }
+.page-head { display: grid; grid-template-columns: 1.4fr .9fr; gap: 16px; margin-bottom: 18px; }
+.page-intro, .page-summary, .section, .kpi-card, .drawer-card, .legend-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow);
+}
+.page-intro { padding: 18px 20px; }
+.page-title { font-size: 22px; font-weight: 800; margin: 0 0 8px; }
+.page-text { margin: 0; color: var(--text-2); }
+.summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 16px; }
+.summary-item { padding: 12px; border: 1px solid rgba(30,48,80,.6); border-radius: 12px; background: var(--surface-2); }
+.summary-label { color: var(--text-3); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 5px; }
+.summary-value { font-size: 14px; color: var(--text); font-weight: 700; }
+.kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.kpi-card { padding: 15px; position: relative; overflow: hidden; cursor: pointer; }
+.kpi-card:before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--accent); opacity: .9; }
+.kpi-label { font-size: 11px; text-transform: uppercase; color: var(--text-3); letter-spacing: .08em; margin-bottom: 8px; }
+.kpi-value { font-size: 30px; font-weight: 800; line-height: 1; letter-spacing: -.03em; }
+.kpi-sub { color: var(--text-2); font-size: 12px; margin-top: 8px; }
+.kpi-delta { margin-top: 6px; font-size: 12px; font-weight: 700; }
+.kpi-delta.up { color: var(--accent-3); }
+.kpi-delta.down { color: var(--accent-5); }
+.section-grid-2 { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; margin-bottom: 16px; }
+.section-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
+.section { overflow: hidden; }
+.section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid rgba(30,48,80,.7); }
+.section-title { font-size: 16px; font-weight: 800; margin: 0 0 4px; }
+.section-subtitle { margin: 0; color: var(--text-3); font-size: 12px; }
+.section-actions { display: flex; gap: 8px; align-items: center; }
+.icon-btn, .ghost-btn {
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2); border-radius: 10px; cursor: pointer; transition: .15s ease;
+}
+.icon-btn { width: 34px; height: 34px; }
+.ghost-btn { padding: 8px 12px; font-size: 12px; }
+.icon-btn:hover, .ghost-btn:hover { border-color: var(--accent); color: var(--accent); }
+.section-body { padding: 18px; }
+.pitch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.pitch-card { background: var(--surface-2); border: 1px solid rgba(30,48,80,.65); border-radius: 12px; padding: 12px; }
+.pitch-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.pitch-text { color: var(--text-2); font-size: 13px; }
+.alert {
+  background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.25); border-radius: 12px; padding: 12px 14px; color: var(--text-2);
+  margin-bottom: 16px;
+}
+.alert.warning { background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.24); }
+.alert.danger { background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.24); }
+.funnel { display: flex; flex-direction: column; gap: 10px; }
+.funnel-step { display: grid; grid-template-columns: 220px 1fr 76px 84px; gap: 12px; align-items: center; cursor: pointer; }
+.funnel-name { color: var(--text-2); font-size: 13px; }
+.bar-track { position: relative; height: 34px; background: var(--surface-2); border-radius: 10px; overflow: hidden; border: 1px solid rgba(30,48,80,.5); }
+.bar-fill { height: 100%; border-radius: 10px; display: flex; align-items: center; padding: 0 10px; white-space: nowrap; font-size: 12px; font-weight: 700; color: rgba(8,12,20,.88); }
+.bar-value, .bar-side { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; text-align: right; }
+.bar-side { color: var(--text-3); }
+.legend-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.legend-chip { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: var(--surface-2); border: 1px solid rgba(30,48,80,.6); border-radius: 999px; color: var(--text-2); font-size: 12px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.table-wrap { overflow: auto; }
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { padding: 10px 12px; border-bottom: 1px solid rgba(30,48,80,.45); font-size: 13px; }
+.table th { text-align: left; color: var(--text-3); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; position: sticky; top: 0; background: var(--surface); }
+.table tr:hover td { background: rgba(255,255,255,.02); }
+.table tr.clickable { cursor: pointer; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.good { color: var(--accent-3); }
+.warn { color: var(--accent-4); }
+.bad { color: var(--accent-5); }
+.accent { color: var(--accent); }
+.badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 4px 8px; font-size: 11px; font-weight: 700; }
+.badge.good { background: rgba(16,185,129,.12); }
+.badge.warn { background: rgba(245,158,11,.12); }
+.badge.bad { background: rgba(239,68,68,.12); }
+.badge.accent { background: rgba(0,229,255,.12); }
+.meter { min-width: 120px; display: flex; align-items: center; gap: 8px; }
+.meter-track { width: 110px; height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; border: 1px solid rgba(30,48,80,.4); }
+.meter-fill { height: 100%; border-radius: 999px; }
+.chart-card { background: var(--surface-2); border: 1px solid rgba(30,48,80,.6); border-radius: 14px; padding: 14px; }
+.chart-title { font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+.line-chart svg, .heatmap svg { width: 100%; height: auto; display: block; }
+.flow-list { display: flex; flex-direction: column; gap: 10px; }
+.flow-row { display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; }
+.flow-source { color: var(--text-2); font-size: 13px; }
+.flow-stack { display: flex; height: 24px; border-radius: 999px; overflow: hidden; border: 1px solid rgba(30,48,80,.5); background: var(--surface-2); }
+.flow-seg { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: rgba(8,12,20,.85); }
+.heatmap { display: grid; gap: 6px; }
+.heatmap-row { display: grid; grid-template-columns: 92px repeat(4, 1fr); gap: 6px; }
+.heatmap-head { color: var(--text-3); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; text-align: center; }
+.heatmap-label { color: var(--text-2); font-size: 12px; display: flex; align-items: center; }
+.heatmap-cell { min-height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.small-note { color: var(--text-3); font-size: 12px; }
+.drawer-backdrop {
+  position: fixed; inset: 0; background: rgba(3,7,12,.62); z-index: 90;
+}
+.drawer {
+  position: fixed; right: 0; top: 0; bottom: 0; width: min(560px, 96vw); background: #09111c; z-index: 91;
+  border-left: 1px solid var(--border); box-shadow: var(--shadow); overflow: auto;
+}
+.drawer-head { position: sticky; top: 0; background: rgba(9,17,28,.95); backdrop-filter: blur(10px); z-index: 2; padding: 18px 20px; border-bottom: 1px solid rgba(30,48,80,.7); display: flex; justify-content: space-between; gap: 12px; }
+.drawer-title { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
+.drawer-subtitle { margin: 0; color: var(--text-3); }
+.drawer-body { padding: 18px 20px 28px; }
+.drawer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.drawer-card { padding: 12px; }
+.drawer-card h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); }
+.drawer-card p, .drawer-card li { color: var(--text-2); font-size: 13px; }
+.drawer-card ul { margin: 0; padding-left: 18px; }
+.formula { background: var(--surface-2); border: 1px solid rgba(30,48,80,.6); border-radius: 12px; padding: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin-bottom: 14px; color: var(--accent); }
+.empty { padding: 28px; text-align: center; color: var(--text-3); }
+.pills-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.select { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); border-radius: 10px; padding: 7px 10px; }
+.footer-note { margin-top: 10px; font-size: 12px; color: var(--text-3); }
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  .page-head, .section-grid-2, .section-grid-3, .pitch-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .funnel-step { grid-template-columns: 1fr; }
+  .heatmap-row { grid-template-columns: 78px repeat(4, 1fr); }
+}
+@media (max-width: 700px) {
+  .header-top, .filter-bar, .tabs, .main { padding-left: 16px; padding-right: 16px; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .summary-grid, .drawer-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function() {
+  const baseState = {
+    page: 'core',
+    drawer: null,
+    trendMetric: 'engagement',
+    uxZone: 'Все зоны',
+    discoverySort: 'firstBet',
+    filters: {
+      project: 'FL',
+      period: '30 дней',
+      device: 'Все устройства',
+      geo: 'Все гео',
+      lifecycle: 'Все игроки'
+    }
+  };
+  const state = JSON.parse(JSON.stringify(baseState));
+  const app = document.getElementById('app');
+  let drawerSeq = 0;
+  let drawerRegistry = {};
+
+  const COLORS = {
+    cyan: '#00e5ff',
+    purple: '#7c3aed',
+    green: '#10b981',
+    orange: '#f59e0b',
+    red: '#ef4444',
+    pink: '#ec4899',
+    blue: '#38bdf8',
+    slate: '#94a3b8'
+  };
+
+  const FILTER_OPTIONS = {
+    project: ['FL', 'FL2', 'FL3'],
+    period: ['7 дней', '14 дней', '30 дней', '90 дней'],
+    device: ['Все устройства', 'Мобайл', 'Десктоп', 'Планшет'],
+    geo: ['Все гео', 'RU', 'KZ', 'BY', 'UA'],
+    lifecycle: ['Все игроки', 'Новые', 'Возвращающиеся']
+  };
+
+  const PROFILE_EFFECTS = {
+    project: {
+      'FL':        { engagement: 1, reg: 1, dep: 1, bet: 1, bonus: 1, store: 1, discovery: 1, payment: 1, friction: 1, kyc: 1, retention: 1, error: 1 },
+      'FL2':       { engagement: 1.03, reg: 1.02, dep: 1.07, bet: 1.04, bonus: 1.02, store: 0.98, discovery: 1.01, payment: 1.04, friction: 0.95, kyc: 1.01, retention: 1.02, error: 0.94 },
+      'FL3':       { engagement: 0.96, reg: 0.94, dep: 1.04, bet: 0.98, bonus: 1.08, store: 1.05, discovery: 0.95, payment: 0.97, friction: 1.08, kyc: 0.97, retention: 0.96, error: 1.07 }
+    },
+    period: {
+      '7 дней':    { engagement: 1.01, reg: 0.99, dep: 0.98, bet: 0.99, bonus: 0.99, store: 0.98, discovery: 1.00, payment: 0.98, friction: 1.01, kyc: 0.99, retention: 0.98, error: 1.03 },
+      '14 дней':   { engagement: 1.00, reg: 1.00, dep: 1.00, bet: 1.00, bonus: 1.00, store: 1.00, discovery: 1.00, payment: 1.00, friction: 1.00, kyc: 1.00, retention: 1.00, error: 1.00 },
+      '30 дней':   { engagement: 1.00, reg: 1.00, dep: 1.00, bet: 1.00, bonus: 1.00, store: 1.00, discovery: 1.00, payment: 1.00, friction: 1.00, kyc: 1.00, retention: 1.00, error: 1.00 },
+      '90 дней':   { engagement: 0.99, reg: 1.01, dep: 1.02, bet: 1.02, bonus: 1.01, store: 1.03, discovery: 1.01, payment: 1.02, friction: 0.99, kyc: 1.01, retention: 1.03, error: 0.98 }
+    },
+    device: {
+      'Все устройства': { engagement: 1, reg: 1, dep: 1, bet: 1, bonus: 1, store: 1, discovery: 1, payment: 1, friction: 1, kyc: 1, retention: 1, error: 1 },
+      'Мобайл':        { engagement: 0.95, reg: 0.93, dep: 0.90, bet: 0.94, bonus: 1.05, store: 1.03, discovery: 1.04, payment: 0.89, friction: 1.12, kyc: 0.91, retention: 0.95, error: 1.11 },
+      'Десктоп':       { engagement: 1.06, reg: 1.05, dep: 1.04, bet: 1.03, bonus: 0.97, store: 0.99, discovery: 0.98, payment: 1.05, friction: 0.91, kyc: 1.07, retention: 1.03, error: 0.93 },
+      'Планшет':       { engagement: 0.98, reg: 0.97, dep: 0.96, bet: 0.97, bonus: 1.01, store: 1.00, discovery: 1.00, payment: 0.97, friction: 1.05, kyc: 0.98, retention: 0.98, error: 1.04 }
+    },
+    geo: {
+      'Все гео': { engagement: 1, reg: 1, dep: 1, bet: 1, bonus: 1, store: 1, discovery: 1, payment: 1, friction: 1, kyc: 1, retention: 1, error: 1 },
+      'RU':      { engagement: 1.02, reg: 1.01, dep: 1.03, bet: 1.01, bonus: 1.00, store: 1.00, discovery: 0.99, payment: 1.02, friction: 0.98, kyc: 1.01, retention: 1.01, error: 0.97 },
+      'KZ':      { engagement: 1.00, reg: 1.02, dep: 0.97, bet: 0.99, bonus: 1.03, store: 1.01, discovery: 1.00, payment: 0.95, friction: 1.05, kyc: 0.96, retention: 0.98, error: 1.06 },
+      'BY':      { engagement: 0.98, reg: 0.99, dep: 1.01, bet: 1.00, bonus: 1.02, store: 1.04, discovery: 1.00, payment: 1.01, friction: 1.02, kyc: 1.00, retention: 0.99, error: 1.01 },
+      'UA':      { engagement: 0.97, reg: 0.96, dep: 0.94, bet: 0.97, bonus: 0.99, store: 0.98, discovery: 0.98, payment: 0.92, friction: 1.08, kyc: 0.95, retention: 0.97, error: 1.09 }
+    },
+    lifecycle: {
+      'Все игроки':      { engagement: 1, reg: 1, dep: 1, bet: 1, bonus: 1, store: 1, discovery: 1, payment: 1, friction: 1, kyc: 1, retention: 1, error: 1 },
+      'Новые':           { engagement: 0.97, reg: 1.05, dep: 0.90, bet: 0.88, bonus: 1.08, store: 1.02, discovery: 1.03, payment: 0.92, friction: 1.11, kyc: 0.89, retention: 0.86, error: 1.08 },
+      'Возвращающиеся':  { engagement: 1.06, reg: 0.90, dep: 1.10, bet: 1.12, bonus: 0.96, store: 1.05, discovery: 0.97, payment: 1.07, friction: 0.92, kyc: 1.06, retention: 1.14, error: 0.93 }
+    }
+  };
+
+  const BASE = {
+    coreFunnel: [
+      { id: 'visit', name: 'Визит', value: 100, color: COLORS.cyan },
+      { id: 'engaged', name: 'Вовлечённый визит', value: 68.4, family: 'engagement', color: '#12d4f2' },
+      { id: 'regStart', name: 'Начало регистрации', value: 28.2, family: 'reg', color: '#0ea5e9' },
+      { id: 'regComplete', name: 'Регистрация завершена', value: 18.7, family: 'reg', color: COLORS.purple },
+      { id: 'depIntent', name: 'Намерение депозита', value: 12.4, family: 'dep', color: '#9155ff' },
+      { id: 'method', name: 'Выбор метода оплаты', value: 10.8, family: 'payment', color: '#7c3aed' },
+      { id: 'depSuccess', name: 'Депозит успешен', value: 7.9, family: 'dep', color: COLORS.green },
+      { id: 'gameStart', name: 'Старт игры', value: 6.8, family: 'bet', color: '#34d399' },
+      { id: 'firstBet', name: 'Первая реальная ставка', value: 5.6, family: 'bet', color: '#22c55e' }
+    ],
+    trend: [
+      { date: '01.02', engagement: 66.2, reg: 40.3, dep: 7.1, bet: 5.0 },
+      { date: '05.02', engagement: 67.8, reg: 41.1, dep: 7.4, bet: 5.2 },
+      { date: '10.02', engagement: 69.1, reg: 42.0, dep: 7.8, bet: 5.4 },
+      { date: '15.02', engagement: 68.0, reg: 41.4, dep: 7.6, bet: 5.2 },
+      { date: '20.02', engagement: 71.2, reg: 42.7, dep: 8.1, bet: 5.7 },
+      { date: '25.02', engagement: 70.4, reg: 41.9, dep: 8.0, bet: 5.5 },
+      { date: '01.03', engagement: 68.4, reg: 41.2, dep: 7.9, bet: 5.6 }
+    ],
+    interactions: [
+      { name: 'Главный баннер', share: 31.2, dep: 8.9, bet: 5.2, color: COLORS.cyan },
+      { name: 'Карточка игры', share: 22.4, dep: 6.1, bet: 4.8, color: COLORS.green },
+      { name: 'Сторис / входная иконка', share: 14.7, dep: 9.4, bet: 6.1, color: COLORS.purple },
+      { name: 'Бонусная карточка', share: 10.3, dep: 12.8, bet: 7.3, color: COLORS.orange },
+      { name: 'Виджет заданий', share: 7.8, dep: 11.2, bet: 6.8, color: COLORS.pink },
+      { name: 'Бургер-меню', share: 6.4, dep: 4.2, bet: 3.1, color: COLORS.slate },
+      { name: 'Кнопка депозита', share: 4.2, dep: 18.6, bet: 12.4, color: '#fb923c' },
+      { name: 'VIP / статус', share: 3.0, dep: 13.4, bet: 8.9, color: '#a78bfa' }
+    ],
+    ux: [
+      { name: 'Главный баннер', zone: 'Главная', impression: 94.2, ctr: 31.2, close: 12.1, dep: 8.9, reg: 14.2, tag: 'champion' },
+      { name: 'Сторис / входные иконки', zone: 'Главная', impression: 78.4, ctr: 14.7, close: 42.3, dep: 9.4, reg: 18.7, tag: 'hidden' },
+      { name: 'Виджет заданий', zone: 'Главная', impression: 61.2, ctr: 7.8, close: 28.1, dep: 11.2, reg: 9.4, tag: 'hidden' },
+      { name: 'Бонусные карточки', zone: 'Бонусы', impression: 55.8, ctr: 10.3, close: 31.7, dep: 12.8, reg: 16.3, tag: 'champion' },
+      { name: 'Зал славы', zone: 'Каталог', impression: 48.3, ctr: 18.9, close: 68.4, dep: 2.1, reg: 3.4, tag: 'trap' },
+      { name: 'Популярные игры', zone: 'Каталог', impression: 82.1, ctr: 22.4, close: 18.2, dep: 6.1, reg: 8.7, tag: 'neutral' },
+      { name: 'Бургер-меню', zone: 'Навигация', impression: 71.4, ctr: 6.4, close: 44.2, dep: 4.2, reg: 5.1, tag: 'neutral' },
+      { name: 'VIP / статус', zone: 'VIP', impression: 44.1, ctr: 3.0, close: 22.4, dep: 13.4, reg: 4.2, tag: 'hidden' },
+      { name: 'Промо приложения', zone: 'Приложение', impression: 38.7, ctr: 2.8, close: 55.1, dep: 3.1, reg: 2.8, tag: 'neutral' },
+      { name: 'Рефералка', zone: 'Рефералка', impression: 22.4, ctr: 1.4, close: 61.2, dep: 1.8, reg: 2.1, tag: 'neutral' },
+      { name: 'Джекпоты', zone: 'Каталог', impression: 41.8, ctr: 9.1, close: 72.3, dep: 3.4, reg: 4.1, tag: 'trap' }
+    ],
+    regFunnel: [
+      { id: 'modal', name: 'Показ модального окна', value: 100, color: COLORS.cyan },
+      { id: 'start', name: 'Начало формы', value: 78.4, color: '#12d4f2' },
+      { id: 'contact', name: 'Заполнен email / телефон', value: 62.1, color: '#7dd3fc' },
+      { id: 'password', name: 'Заполнен пароль', value: 54.8, color: COLORS.purple },
+      { id: 'submit', name: 'Нажат submit', value: 48.2, color: '#9155ff' },
+      { id: 'success', name: 'Регистрация успешна', value: 42.3, color: COLORS.green }
+    ],
+    regEntry: [
+      { source: 'Прямой вход', regStart: 100, regComplete: 42.3, depAfter: 9.1 },
+      { source: 'Из баннера', regStart: 112.4, regComplete: 48.7, depAfter: 11.2 },
+      { source: 'Из бонусной карточки', regStart: 108.1, regComplete: 51.2, depAfter: 14.8 },
+      { source: 'Из карточки игры', regStart: 89.4, regComplete: 38.1, depAfter: 7.4 },
+      { source: 'Из промо', regStart: 118.2, regComplete: 55.4, depAfter: 16.3 },
+      { source: 'Из магазина', regStart: 94.7, regComplete: 44.1, depAfter: 12.7 }
+    ],
+    fieldFriction: [
+      { field: 'Email', drop: 8.4, error: 12.1 },
+      { field: 'Телефон', drop: 14.7, error: 22.4 },
+      { field: 'Пароль', drop: 18.2, error: 31.8 },
+      { field: 'Промокод', drop: 6.1, error: 44.2 }
+    ],
+    kyc: [
+      { name: 'Старт KYC', value: 100 },
+      { name: 'Загрузка документа', value: 72.4 },
+      { name: 'Верификация', value: 58.1 },
+      { name: 'KYC завершён', value: 34.7 }
+    ],
+    bonus: [
+      { type: 'Приветственный бонус', page: 100, card: 68.4, terms: 31.2, apply: 41.8, blocked: 8.2, depAfter: 18.7, depSuccess: 14.2 },
+      { type: 'Второй депозит', page: 62.1, card: 44.8, terms: 22.1, apply: 34.2, blocked: 6.4, depAfter: 14.8, depSuccess: 11.6 },
+      { type: 'Релоад на деньги', page: 48.3, card: 38.7, terms: 18.4, apply: 28.1, blocked: 11.2, depAfter: 12.4, depSuccess: 9.8 },
+      { type: 'Релоад на фриспины', page: 41.2, card: 31.4, terms: 14.2, apply: 22.8, blocked: 7.8, depAfter: 8.9, depSuccess: 7.1 },
+      { type: 'Промокод', page: 34.8, card: 28.1, terms: 11.4, apply: 18.4, blocked: 24.1, depAfter: 21.4, depSuccess: 16.8 },
+      { type: 'Бонус магазина', page: 28.4, card: 22.7, terms: 8.7, apply: 14.2, blocked: 4.1, depAfter: 9.8, depSuccess: 8.2 }
+    ],
+    storeFunnel: [
+      { id: 'open', name: 'Открытие магазина', value: 100, color: COLORS.cyan },
+      { id: 'category', name: 'Выбор категории', value: 72.4, color: '#22d3ee' },
+      { id: 'item', name: 'Открытие товара', value: 54.8, color: '#60a5fa' },
+      { id: 'config', name: 'Настройка', value: 42.1, color: COLORS.purple },
+      { id: 'attempt', name: 'Попытка покупки', value: 31.8, color: COLORS.orange },
+      { id: 'success', name: 'Покупка успешна', value: 22.4, color: COLORS.green }
+    ],
+    storeEntry: [
+      { source: 'Из заданий', value: 34.2 },
+      { source: 'Из бонусов', value: 24.8 },
+      { source: 'Из бургер-меню', value: 18.4 },
+      { source: 'Из VIP / статуса', value: 12.7 },
+      { source: 'С главной', value: 9.9 }
+    ],
+    discovery: [
+      { name: 'Популярные игры', impression: 82.1, click: 22.4, gameOpen: 18.1, demo: 8.4, real: 12.7, firstBet: 9.4, return: 14.2 },
+      { name: 'Лайв-казино', impression: 74.8, click: 19.8, gameOpen: 16.4, demo: 2.1, real: 14.8, firstBet: 11.2, return: 18.7 },
+      { name: 'Слоты', impression: 68.4, click: 17.2, gameOpen: 14.1, demo: 9.8, real: 8.4, firstBet: 6.1, return: 22.4 },
+      { name: 'Краш-игры', impression: 54.2, click: 24.1, gameOpen: 21.8, demo: 4.2, real: 18.4, firstBet: 14.7, return: 12.1 },
+      { name: 'Хайповые игры', impression: 48.7, click: 31.4, gameOpen: 28.2, demo: 12.1, real: 19.4, firstBet: 15.8, return: 8.4 },
+      { name: 'Новинки', impression: 61.2, click: 14.8, gameOpen: 12.1, demo: 7.4, real: 7.8, firstBet: 5.4, return: 31.2 },
+      { name: 'Зал славы', impression: 48.3, click: 18.9, gameOpen: 4.2, demo: 1.4, real: 3.1, firstBet: 2.1, return: 68.4 },
+      { name: 'Топ выигрышей', impression: 44.1, click: 22.1, gameOpen: 6.8, demo: 2.8, real: 4.7, firstBet: 3.2, return: 54.8 },
+      { name: 'Джекпоты', impression: 41.8, click: 9.1, gameOpen: 7.4, demo: 3.1, real: 5.8, firstBet: 4.2, return: 44.2 },
+      { name: 'Провайдеры', impression: 38.4, click: 8.4, gameOpen: 6.1, demo: 4.8, real: 4.2, firstBet: 3.1, return: 28.7 }
+    ],
+    depositFunnel: [
+      { id: 'open', name: 'Открытие депозита', value: 100, color: COLORS.cyan },
+      { id: 'visible', name: 'Метод показан', value: 97.4, color: '#22d3ee' },
+      { id: 'selected', name: 'Метод выбран', value: 84.1, color: COLORS.purple },
+      { id: 'bonus', name: 'Бонус прикреплён', value: 71.8, color: '#8b5cf6' },
+      { id: 'amount', name: 'Сумма введена', value: 68.4, color: COLORS.orange },
+      { id: 'submit', name: 'Нажат submit', value: 61.2, color: '#fb923c' },
+      { id: 'success', name: 'Депозит успешен', value: 44.8, color: COLORS.green }
+    ],
+    methods: [
+      { method: 'Банковская карта', success: 68.4, fail: 18.2, abandon: 13.4, retry: 42.1, errorTop: 'Отклонение 31%' },
+      { method: 'Криптовалюта', success: 84.2, fail: 8.4, abandon: 7.4, retry: 24.8, errorTop: 'Таймаут 44%' },
+      { method: 'Электронный кошелёк', success: 79.1, fail: 11.4, abandon: 9.5, retry: 31.2, errorTop: 'Ошибка 3DS 28%' },
+      { method: 'Мобильный платёж', success: 54.8, fail: 28.4, abandon: 16.8, retry: 58.4, errorTop: 'Провайдер недоступен 41%' },
+      { method: 'Банковский перевод', success: 71.2, fail: 14.8, abandon: 14.0, retry: 38.7, errorTop: 'Техническая ошибка 22%' }
+    ],
+    errors: [
+      { type: 'Declined', freq: 34.2, impact: 28.4 },
+      { type: 'Timeout', freq: 22.8, impact: 18.7 },
+      { type: 'Ошибка 3DS', freq: 18.4, impact: 24.1 },
+      { type: 'Недостаточно средств', freq: 12.7, impact: 14.8 },
+      { type: 'Провайдер недоступен', freq: 8.4, impact: 31.2 },
+      { type: 'Техническая ошибка', freq: 3.5, impact: 11.4 }
+    ],
+    heatmap: {
+      cols: ['Карта', 'Крипто', 'Кошелёк', 'Моб. платёж'],
+      rows: ['iOS', 'Android', 'Десктоп', 'Планшет'],
+      values: [
+        [72.4, 88.1, 82.4, 58.7],
+        [61.2, 79.8, 74.1, 48.4],
+        [68.9, 84.2, 77.8, 54.1],
+        [42.1, 71.4, 68.2, 38.9]
+      ]
+    }
+  };
+
+  const DEFINITIONS = {
+    engagement: {
+      title: 'Вовлечённый визит',
+      formula: 'Engaged Sessions / Total Sessions × 100',
+      definition: 'Доля сессий, в которых пользователь совершил хотя бы одно осмысленное действие: клик, глубокий скролл, просмотр экрана или запуск сценария.',
+      relevance: 'Это верхняя граница воронки качества трафика. Если метрика падает, ниже почти всегда падают регистрация и депозит.',
+      decisions: ['Уточнить качество трафика по источникам', 'Поменять первый экран и ценностное предложение', 'Проверить скорость загрузки и видимость призыва к действию'],
+      success: 'Для продукта это ранний сигнал, что пользователь увидел смысл оставаться на платформе.',
+      insights: [
+        'Рост этой метрики обычно дешевле, чем рост депозита: часто достаточно улучшить первый экран и навигацию.',
+        'Нельзя интерпретировать без разрезов по девайсу и типу игрока: мобильный и новый трафик почти всегда ниже.'
+      ],
+      hypotheses: [
+        'На первом экране не хватает ясного ответа, зачем регистрироваться прямо сейчас.',
+        'Для мобильного трафика перегружены верхние блоки и призыв к действию теряется ниже первого экрана.'
+      ]
+    },
+    reg: {
+      title: 'Конверсия в регистрацию',
+      formula: 'Reg Complete / Engaged Visits × 100',
+      definition: 'Доля вовлечённых визитов, которые дошли до успешной регистрации.',
+      relevance: 'Это основной мост между интересом и идентифицируемым пользователем. Всё, что выше регистрации, не монетизируется полноценно.',
+      decisions: ['Упростить форму', 'Поменять порядок полей', 'Перенести часть обязательных данных после первого депозита'],
+      success: 'Метрика показывает, насколько понятен и короток вход в продукт.',
+      insights: [
+        'Если reg start высокий, а reg complete низкий, проблема почти всегда в friction формы или валидации.',
+        'Если reg start низкий, сначала нужно чинить предложение ценности и точки входа, а не форму.'
+      ],
+      hypotheses: [
+        'Пароль и телефон создают избыточное трение для новых пользователей.',
+        'Часть пользователей готова регистрироваться после игрового контекста, а не с главной.'
+      ]
+    },
+    dep: {
+      title: 'Конверсия в первый депозит',
+      formula: 'First Deposit Success / Registered Users × 100',
+      definition: 'Доля зарегистрированных пользователей, которые успешно совершают первый депозит.',
+      relevance: 'Это главная точка перехода из активации в монетизацию. Любая просадка здесь напрямую бьёт по доходу.',
+      decisions: ['Усилить бонусную мотивацию', 'Сократить шаги в депозитной форме', 'Добавить более сильный резервный сценарий после ошибки'],
+      success: 'Метрика отвечает на вопрос, превращает ли продукт интерес в деньги.',
+      insights: [
+        'Нельзя читать в отрыве от платёжного покрытия и гео.',
+        'Если намерение депозита высокое, а успех низкий — проблема не в мотивации, а в UX или платёжке.'
+      ],
+      hypotheses: [
+        'Выбранные по умолчанию методы оплаты не совпадают с привычками игроков в конкретном гео.',
+        'Бонус и сумма депозита объяснены слишком поздно, уже после начала формы.'
+      ]
+    },
+    bet: {
+      title: 'Первая реальная ставка',
+      formula: 'First Bet / Engaged Visits × 100',
+      definition: 'Доля вовлечённых пользователей, которые дошли до первой реальной ставки.',
+      relevance: 'Это первый реальный опыт ценности. Игрок мог зарегистрироваться и даже задепозитить, но не увидеть смысл оставаться.',
+      decisions: ['Менять точки входа в игры', 'Переставлять блоки discovery', 'Выделять блоки, ведущие к первой ставке'],
+      success: 'Метрика показывает, насколько быстро продукт приводит пользователя к действию с ценностью.',
+      insights: [
+        'Часть блоков хорошо собирают внимание, но почти не ведут к реальной игре.',
+        'Секции с более низким CTR иногда дают лучший выход в first bet — их нельзя занижать только из-за кликов.'
+      ],
+      hypotheses: [
+        'Карточкам игр не хватает информации о типе опыта и минимальной ставке.',
+        'Для новых пользователей эффективнее игровые секции с понятным сценарным обещанием, а не просто каталог.'
+      ]
+    },
+    payment: {
+      title: 'Успех платёжного шага',
+      formula: 'Successful Deposits / Submit Attempts × 100',
+      definition: 'Успех на последней миле: доля submit-попыток, которые закончились успешным депозитом.',
+      relevance: 'Это зона, где продукт уже почти забрал деньги. Просадка здесь самая дорогая.',
+      decisions: ['Переприоритизировать методы', 'Менять резервный сценарий после ошибок', 'Подключать резервных провайдеров'],
+      success: 'Чем выше эта метрика, тем меньше потеря уже прогретого намерения.',
+      insights: [
+        'Частотная ошибка не всегда самая вредная. Иногда нужно чинить ошибку с меньшей частотой, но большим влиянием на выход.',
+        'Повторная попытка — сильный резерв роста, если после ошибки быстро предложить альтернативный метод.'
+      ],
+      hypotheses: [
+        'Мобильный платёж проседает не по спросу, а по стабильности провайдера.',
+        'Пользователю не хватает уверенности после ошибки: нужно не только сообщение, но и следующий лучший шаг.'
+      ]
+    }
+  };
+
+  const PAGE_META = {
+    core: {
+      title: 'Главная продуктовая воронка',
+      text: 'Блок отвечает за путь от первого визита до первой реальной ставки. Это верхнеуровневый слой, который продакт использует как точку входа в разбор потерь и поиск зон роста.',
+      summary: [
+        ['Что продаём внутри ТЗ', 'Нужен единый слой видимости по тому, где пользователь впервые теряет мотивацию.'],
+        ['Зачем продакту', 'Чтобы быстро отделять проблему трафика от проблемы UX и от проблемы платёжного шага.'],
+        ['Какие решения поддерживает', 'Приоритизация изменений на главной, в регистрации, в депозите и в discovery.'],
+        ['Главный риск без блока', 'Команда будет спорить о симптомах, а не о конкретном шаге потери.']
+      ]
+    },
+    ux: {
+      title: 'Эффективность продуктовых блоков',
+      text: 'Здесь дашборд не просто считает CTR, а показывает реальный эффект каждого блока после взаимодействия. Это нужно, чтобы перестать путать популярные элементы с полезными для бизнеса.',
+      summary: [
+        ['Что продаём внутри ТЗ', 'Оценку каждого блока не по кликам, а по влиянию на регистрацию, депозит и ставку.'],
+        ['Зачем продакту', 'Чтобы понимать, что усиливать, что скрывать, а что перерабатывать, даже если CTR выглядит красивым.'],
+        ['Какие решения поддерживает', 'Перестановка блоков на главной, редизайн карточек, изменение призывов к действию и сценариев входа.'],
+        ['Главный риск без блока', 'Высокий CTR будет маскировать ловушки внимания и забирать место у действительно полезных зон.']
+      ]
+    },
+    reg: {
+      title: 'Регистрация, профиль и KYC',
+      text: 'Этот слой нужен, чтобы перевести разговор о форме из вкусовщины в цифры: где именно пользователь ломается, какое поле самое тяжёлое и что реально тормозит выход в депозит.',
+      summary: [
+        ['Что продаём внутри ТЗ', 'Полный разбор формы: шаги, поля, входные точки и влияние KYC на дальнейшую монетизацию.'],
+        ['Зачем продакту', 'Чтобы сокращать friction именно там, где это даст максимум роста, а не «упрощать всё подряд».'],
+        ['Какие решения поддерживает', 'Порядок полей, постепенный сбор данных, перенос обязательных данных, тексты ошибок.'],
+        ['Главный риск без блока', 'Команда лечит форму целиком, хотя боль может быть в одном-двух шагах.']
+      ]
+    },
+    bonus: {
+      title: 'Бонусы, магазин, промо и турниры',
+      text: 'Блок нужен, чтобы оценивать не только открытия и клики, а то, насколько эти механики реально приближают пользователя к депозиту и игре.',
+      summary: [
+        ['Что продаём внутри ТЗ', 'Связку «механика → активация → монетизация», а не просто виральность или просмотры.'],
+        ['Зачем продакту', 'Чтобы понять, какие механики работают как двигатель выручки, а какие живут только в engagement-слое.'],
+        ['Какие решения поддерживает', 'Изменение условий доступа, позиционирования бонуса, витрины магазина и контента промо.'],
+        ['Главный риск без блока', 'Механики будут масштабироваться по привычке, а не по реальной отдаче в деньги.']
+      ]
+    },
+    discovery: {
+      title: 'Игровой каталог и путь к первой ставке',
+      text: 'Задача блока — показать, какие секции действительно ведут в игру и ставку, а какие только крутят пользователя по каталогу.',
+      summary: [
+        ['Что продаём внутри ТЗ', 'Оценку каталога по его реальной продуктовой задаче — довести до первой ставки.'],
+        ['Зачем продакту', 'Чтобы переставлять секции и менять карточки по влиянию на ценность, а не по субъективной «красоте».'],
+        ['Какие решения поддерживает', 'Приоритизация секций, изменение карточек, промо игровых сценариев, навигация внутри каталога.'],
+        ['Главный риск без блока', 'Каталог будет оптимизироваться под клики и просмотры, а не под монетизируемое действие.']
+      ]
+    },
+    deposit: {
+      title: 'Депозитный UX и платёжная диагностика',
+      text: 'Это операционный блок для продакта и платёжной команды. Он показывает, где мы теряем уже разогретое намерение и какие методы реально надо лечить первыми.',
+      summary: [
+        ['Что продаём внутри ТЗ', 'Полный разбор депозитной формы, ошибок и повторных попыток по платёжным методам.'],
+        ['Зачем продакту', 'Чтобы связывать UX-решения с выручкой и не тонуть в необработанном списке платёжных инцидентов.'],
+        ['Какие решения поддерживает', 'Очередность методов, резервные провайдеры, альтернативный сценарий после ошибки, тексты ошибок.'],
+        ['Главный риск без блока', 'Команда чинит не самые дорогие ошибки и теряет пользователей, уже готовых заплатить.']
+      ]
+    }
+  };
+
+  function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+  function round(value) { return Math.round(value * 10) / 10; }
+  function pct(value) { return round(value).toFixed(1) + '%'; }
+  function mergeProfile(filters) {
+    const p = { engagement:1, reg:1, dep:1, bet:1, bonus:1, store:1, discovery:1, payment:1, friction:1, kyc:1, retention:1, error:1 };
+    ['project','period','device','geo','lifecycle'].forEach(key => {
+      const effect = PROFILE_EFFECTS[key][filters[key]];
+      Object.keys(p).forEach(metric => { p[metric] *= effect[metric]; });
+    });
+    return p;
+  }
+  function adjust(value, factor, min=0, max=100) { return round(clamp(value * factor, min, max)); }
+  function invert(value, factor, min=0, max=100) { return round(clamp(value * (2 - factor), min, max)); }
+  function deriveData(filters) {
+    const prof = mergeProfile(filters);
+    const core = BASE.coreFunnel.map(item => ({ ...item }));
+    core[1].value = adjust(BASE.coreFunnel[1].value, prof.engagement, 20, 95);
+    core[2].value = Math.min(core[1].value - 2, adjust(BASE.coreFunnel[2].value, prof.reg, 8, 70));
+    core[3].value = Math.min(core[2].value - 1.5, adjust(BASE.coreFunnel[3].value, prof.reg * (2 - (prof.friction - 0.9)), 5, 60));
+    core[4].value = Math.min(core[3].value - 1, adjust(BASE.coreFunnel[4].value, prof.dep, 3, 45));
+    core[5].value = Math.min(core[4].value - 0.3, adjust(BASE.coreFunnel[5].value, prof.payment, 2, 40));
+    core[6].value = Math.min(core[5].value - 0.2, adjust(BASE.coreFunnel[6].value, prof.dep * prof.payment, 1, 35));
+    core[7].value = Math.min(core[6].value, adjust(BASE.coreFunnel[7].value, prof.bet, 1, 32));
+    core[8].value = Math.min(core[7].value - 0.2, adjust(BASE.coreFunnel[8].value, prof.bet * prof.retention, 0.5, 28));
+    core.forEach(item => item.value = round(item.value));
+
+    const trend = BASE.trend.map((row, idx) => {
+      const periodBias = filters.period === '7 дней' ? (idx % 2 === 0 ? -0.4 : 0.6) : filters.period === '90 дней' ? ((idx - 3) * 0.15) : ((idx - 3) * 0.05);
+      return {
+        date: row.date,
+        engagement: adjust(row.engagement + periodBias, prof.engagement, 30, 95),
+        reg: adjust(row.reg + periodBias * 0.7, prof.reg, 15, 70),
+        dep: adjust(row.dep + periodBias * 0.15, prof.dep * prof.payment, 2, 20),
+        bet: adjust(row.bet + periodBias * 0.1, prof.bet * prof.retention, 1, 16)
+      };
+    });
+
+    const interactions = BASE.interactions.map(item => ({
+      ...item,
+      share: adjust(item.share, prof.discovery * prof.engagement, 1, 60),
+      dep: adjust(item.dep, prof.dep * (item.name.includes('депозита') ? 1.06 : 1), 1, 40),
+      bet: adjust(item.bet, prof.bet * (item.name.includes('Карточка игры') ? 1.05 : 1), 1, 35)
+    }));
+
+    const ux = BASE.ux.map(item => ({
+      ...item,
+      impression: adjust(item.impression, prof.engagement, 5, 100),
+      ctr: adjust(item.ctr, prof.discovery * (item.zone === 'Главная' ? 1.02 : 1), 0.5, 60),
+      close: invert(item.close, prof.engagement, 5, 90),
+      dep: adjust(item.dep, prof.dep * (item.tag === 'hidden' ? 1.05 : 1), 0.5, 30),
+      reg: adjust(item.reg, prof.reg, 0.5, 35)
+    }));
+
+    const regFunnel = BASE.regFunnel.map(item => ({ ...item }));
+    regFunnel[1].value = adjust(BASE.regFunnel[1].value, prof.reg, 20, 95);
+    regFunnel[2].value = Math.min(regFunnel[1].value - 2, adjust(BASE.regFunnel[2].value, prof.reg * (2 - (prof.friction - 0.9)), 15, 90));
+    regFunnel[3].value = Math.min(regFunnel[2].value - 2, adjust(BASE.regFunnel[3].value, prof.reg * (2 - (prof.friction - 0.9)), 10, 85));
+    regFunnel[4].value = Math.min(regFunnel[3].value - 1, adjust(BASE.regFunnel[4].value, prof.reg, 8, 75));
+    regFunnel[5].value = Math.min(regFunnel[4].value - 0.5, adjust(BASE.regFunnel[5].value, prof.reg, 6, 70));
+
+    const regEntry = BASE.regEntry.map(item => ({
+      ...item,
+      regStart: adjust(item.regStart, prof.reg, 60, 150),
+      regComplete: adjust(item.regComplete, prof.reg * (2 - (prof.friction - 0.9)), 10, 80),
+      depAfter: adjust(item.depAfter, prof.dep, 2, 35)
+    }));
+
+    const fieldFriction = BASE.fieldFriction.map(item => ({
+      ...item,
+      drop: adjust(item.drop, prof.friction, 2, 60),
+      error: adjust(item.error, prof.friction * prof.error, 5, 80)
+    }));
+
+    const kyc = BASE.kyc.map(item => ({ ...item }));
+    kyc[1].value = adjust(BASE.kyc[1].value, prof.kyc, 25, 95);
+    kyc[2].value = Math.min(kyc[1].value - 2, adjust(BASE.kyc[2].value, prof.kyc, 15, 90));
+    kyc[3].value = Math.min(kyc[2].value - 2, adjust(BASE.kyc[3].value, prof.kyc * (2 - (prof.friction - 0.9)), 8, 80));
+
+    const bonus = BASE.bonus.map(item => ({
+      ...item,
+      page: adjust(item.page, prof.bonus, 10, 100),
+      card: adjust(item.card, prof.bonus, 5, 90),
+      terms: adjust(item.terms, prof.bonus, 2, 70),
+      apply: adjust(item.apply, prof.bonus * (2 - (prof.friction - 0.9)), 2, 75),
+      blocked: invert(item.blocked, prof.bonus * prof.payment, 1, 60),
+      depAfter: adjust(item.depAfter, prof.dep, 1, 40),
+      depSuccess: adjust(item.depSuccess, prof.dep * prof.payment, 1, 35)
+    }));
+
+    const storeFunnel = BASE.storeFunnel.map(item => ({ ...item }));
+    storeFunnel[1].value = adjust(BASE.storeFunnel[1].value, prof.store, 20, 95);
+    storeFunnel[2].value = Math.min(storeFunnel[1].value - 2, adjust(BASE.storeFunnel[2].value, prof.store, 10, 85));
+    storeFunnel[3].value = Math.min(storeFunnel[2].value - 2, adjust(BASE.storeFunnel[3].value, prof.store * (2 - (prof.friction - 0.9)), 8, 80));
+    storeFunnel[4].value = Math.min(storeFunnel[3].value - 2, adjust(BASE.storeFunnel[4].value, prof.store, 4, 70));
+    storeFunnel[5].value = Math.min(storeFunnel[4].value - 2, adjust(BASE.storeFunnel[5].value, prof.store * prof.payment, 2, 55));
+
+    const storeEntry = BASE.storeEntry.map(item => ({ ...item, value: adjust(item.value, prof.store * prof.bonus, 1, 60) }));
+
+    const discovery = BASE.discovery.map(item => ({
+      ...item,
+      impression: adjust(item.impression, prof.discovery, 5, 100),
+      click: adjust(item.click, prof.discovery, 1, 60),
+      gameOpen: adjust(item.gameOpen, prof.discovery * prof.bet, 1, 50),
+      demo: adjust(item.demo, prof.discovery, 0.5, 30),
+      real: adjust(item.real, prof.bet, 0.5, 40),
+      firstBet: adjust(item.firstBet, prof.bet * prof.retention, 0.5, 35),
+      return: invert(item.return, prof.discovery * prof.retention, 5, 80)
+    }));
+
+    const depositFunnel = BASE.depositFunnel.map(item => ({ ...item }));
+    depositFunnel[1].value = adjust(BASE.depositFunnel[1].value, prof.payment, 50, 100);
+    depositFunnel[2].value = Math.min(depositFunnel[1].value - 1, adjust(BASE.depositFunnel[2].value, prof.payment, 20, 98));
+    depositFunnel[3].value = Math.min(depositFunnel[2].value - 1, adjust(BASE.depositFunnel[3].value, prof.bonus, 10, 95));
+    depositFunnel[4].value = Math.min(depositFunnel[3].value - 1, adjust(BASE.depositFunnel[4].value, prof.payment * (2 - (prof.friction - 0.9)), 8, 92));
+    depositFunnel[5].value = Math.min(depositFunnel[4].value - 1, adjust(BASE.depositFunnel[5].value, prof.payment, 5, 88));
+    depositFunnel[6].value = Math.min(depositFunnel[5].value - 1, adjust(BASE.depositFunnel[6].value, prof.dep * prof.payment, 2, 75));
+
+    const methods = BASE.methods.map(item => ({
+      ...item,
+      success: adjust(item.success, prof.payment, 20, 95),
+      fail: adjust(item.fail, prof.error, 2, 60),
+      abandon: adjust(item.abandon, prof.friction, 2, 60),
+      retry: adjust(item.retry, prof.retention, 5, 90)
+    }));
+
+    const errors = BASE.errors.map(item => ({
+      ...item,
+      freq: adjust(item.freq, prof.error, 1, 80),
+      impact: adjust(item.impact, prof.error * (filters.device === 'Мобайл' ? 1.04 : 1), 1, 80)
+    }));
+
+    const heatmap = {
+      cols: BASE.heatmap.cols.slice(),
+      rows: BASE.heatmap.rows.slice(),
+      values: BASE.heatmap.values.map(row => row.map(v => adjust(v, prof.payment, 10, 98)))
+    };
+
+    return { prof, core, trend, interactions, ux, regFunnel, regEntry, fieldFriction, kyc, bonus, storeFunnel, storeEntry, discovery, depositFunnel, methods, errors, heatmap };
+  }
+
+  function registerDrawer(payload) {
+    const id = 'dr-' + (++drawerSeq);
+    drawerRegistry[id] = payload;
+    return id;
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  function drawerAttrs(payload) {
+    const id = registerDrawer(payload);
+    return 'data-action="open-drawer" data-drawer-id="' + id + '"';
+  }
+
+  function pill(text, active, action, value) {
+    return '<button class="filter-chip' + (active ? ' active' : '') + '" data-action="' + action + '" data-value="' + escapeHtml(value) + '">' + escapeHtml(text) + '</button>';
+  }
+
+  function sectionPitch(meta) {
+    return '<div class="pitch-grid">'
+      + '<div class="pitch-card"><div class="pitch-label">Что измеряем</div><div class="pitch-text">' + escapeHtml(meta.measure) + '</div></div>'
+      + '<div class="pitch-card"><div class="pitch-label">Актуальность для продакта</div><div class="pitch-text">' + escapeHtml(meta.why) + '</div></div>'
+      + '<div class="pitch-card"><div class="pitch-label">Какие решения поддерживает</div><div class="pitch-text">' + escapeHtml(meta.decisions) + '</div></div>'
+      + '</div>';
+  }
+
+  function kpiCard({ label, value, sub, delta, color, metricKey }) {
+    const def = DEFINITIONS[metricKey] || null;
+    const drawer = def ? {
+      title: def.title,
+      subtitle: 'Описание метрики',
+      formula: def.formula,
+      definition: def.definition,
+      relevance: def.relevance,
+      success: def.success,
+      decisions: def.decisions,
+      insights: def.insights,
+      hypotheses: def.hypotheses
+    } : null;
+    return '<div class="kpi-card" ' + (drawer ? drawerAttrs(drawer) : '') + '>'
+      + '<div class="kpi-label">' + escapeHtml(label) + '</div>'
+      + '<div class="kpi-value" style="color:' + color + '">' + escapeHtml(value) + '</div>'
+      + '<div class="kpi-delta ' + (delta >= 0 ? 'up' : 'down') + '">' + (delta >= 0 ? '▲ +' : '▼ ') + Math.abs(delta).toFixed(1) + ' п.п.</div>'
+      + '<div class="kpi-sub">' + escapeHtml(sub) + '</div>'
+      + '</div>';
+  }
+
+  function summaryGrid(items) {
+    return '<div class="page-summary"><div class="summary-grid">' + items.map(item => '<div class="summary-item"><div class="summary-label">' + escapeHtml(item[0]) + '</div><div class="summary-value">' + escapeHtml(item[1]) + '</div></div>').join('') + '</div></div>';
+  }
+
+  function pageHead(pageKey) {
+    const meta = PAGE_META[pageKey];
+    return '<div class="page-head">'
+      + '<div class="page-intro"><h1 class="page-title">' + escapeHtml(meta.title) + '</h1><p class="page-text">' + escapeHtml(meta.text) + '</p></div>'
+      + summaryGrid(meta.summary)
+      + '</div>';
+  }
+
+  function buildDrawerContent(payload) {
+    if (!payload) return '';
+    const insights = payload.insights || [];
+    const hypotheses = payload.hypotheses || [];
+    const decisions = payload.decisions || [];
+    return '<div class="drawer-backdrop" data-action="close-drawer"></div>'
+      + '<aside class="drawer">'
+      + '<div class="drawer-head"><div><h2 class="drawer-title">' + escapeHtml(payload.title || 'Детали') + '</h2><p class="drawer-subtitle">' + escapeHtml(payload.subtitle || '') + '</p></div><button class="icon-btn" data-action="close-drawer">×</button></div>'
+      + '<div class="drawer-body">'
+      + (payload.formula ? '<div class="formula">' + escapeHtml(payload.formula) + '</div>' : '')
+      + '<div class="drawer-grid">'
+      + (payload.definition ? '<div class="drawer-card"><h4>Что это</h4><p>' + escapeHtml(payload.definition) + '</p></div>' : '')
+      + (payload.relevance ? '<div class="drawer-card"><h4>Актуальность для продакта</h4><p>' + escapeHtml(payload.relevance) + '</p></div>' : '')
+      + (payload.success ? '<div class="drawer-card"><h4>Что даёт бизнесу</h4><p>' + escapeHtml(payload.success) + '</p></div>' : '')
+      + (decisions.length ? '<div class="drawer-card"><h4>Какие решения поддерживает</h4><ul>' + decisions.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul></div>' : '')
+      + '</div>'
+      + (insights.length ? '<div class="drawer-card" style="margin-bottom:12px;"><h4>Инсайты</h4><ul>' + insights.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul></div>' : '')
+      + (hypotheses.length ? '<div class="drawer-card"><h4>Продуктовые гипотезы</h4><ul>' + hypotheses.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul></div>' : '')
+      + '</div></aside>';
+  }
+
+  function renderLineChart(data, key, color) {
+    const width = 640, height = 210, left = 28, right = 10, top = 10, bottom = 26;
+    const max = Math.max(...data.map(x => x[key])) * 1.1;
+    const min = Math.min(...data.map(x => x[key])) * 0.9;
+    const innerW = width - left - right;
+    const innerH = height - top - bottom;
+    const points = data.map((item, index) => {
+      const x = left + (innerW * index / Math.max(1, data.length - 1));
+      const y = top + innerH - ((item[key] - min) / Math.max(1, max - min)) * innerH;
+      return [round(x), round(y), item];
+    });
+    const poly = points.map(p => p[0] + ',' + p[1]).join(' ');
+    let circles = points.map(p => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="' + color + '"></circle>').join('');
+    let xLabels = points.map(p => '<text x="' + p[0] + '" y="' + (height - 6) + '" text-anchor="middle" font-size="10" fill="#6482a7">' + escapeHtml(p[2].date) + '</text>').join('');
+    const yTicks = [0, .25, .5, .75, 1].map(t => {
+      const y = top + innerH - innerH * t;
+      const val = round(min + (max - min) * t);
+      return '<line x1="' + left + '" x2="' + (width-right) + '" y1="' + y + '" y2="' + y + '" stroke="rgba(30,48,80,.45)" stroke-dasharray="4 4"></line>'
+        + '<text x="8" y="' + (y + 4) + '" font-size="10" fill="#6482a7">' + val.toFixed(1) + '%</text>';
+    }).join('');
+    return '<div class="chart-card line-chart"><div class="chart-title">Динамика метрики по периоду</div><svg viewBox="0 0 ' + width + ' ' + height + '">' + yTicks + '<polyline fill="none" stroke="' + color + '" stroke-width="3" points="' + poly + '"></polyline>' + circles + xLabels + '</svg></div>';
+  }
+
+  function renderFunnel(steps, drawerFactory) {
+    return '<div class="funnel">' + steps.map((step, index) => {
+      const prev = index === 0 ? 100 : steps[index - 1].value;
+      const stepCr = index === 0 ? 100 : round(step.value / prev * 100);
+      const drawer = drawerFactory(step, index, stepCr);
+      return '<div class="funnel-step" ' + drawerAttrs(drawer) + '>'
+        + '<div class="funnel-name">' + escapeHtml(step.name) + '</div>'
+        + '<div class="bar-track"><div class="bar-fill" style="width:' + step.value + '%;background:' + step.color + '">' + pct(step.value) + '</div></div>'
+        + '<div class="bar-value">' + pct(step.value) + '</div>'
+        + '<div class="bar-side">' + pct(stepCr) + ' шаг</div>'
+        + '</div>';
+    }).join('') + '</div>';
+  }
+
+  function meter(value, max, color) {
+    return '<div class="meter"><div class="meter-track"><div class="meter-fill" style="width:' + Math.min(100, value / max * 100) + '%;background:' + color + '"></div></div><span class="mono">' + pct(value) + '</span></div>';
+  }
+
+  function tagBadge(tag) {
+    if (tag === 'champion') return '<span class="badge good">сильный блок</span>';
+    if (tag === 'hidden') return '<span class="badge accent">скрытый чемпион</span>';
+    if (tag === 'trap') return '<span class="badge warn">ловушка внимания</span>';
+    return '<span class="badge">нейтрально</span>';
+  }
+
+  function renderFlow(rows) {
+    return '<div class="chart-card"><div class="chart-title">Куда пользователь идёт дальше</div><div class="flow-list">' + rows.map(row => '<div class="flow-row"><div class="flow-source">' + escapeHtml(row.from) + '</div><div class="flow-stack">' + row.parts.map(part => '<div class="flow-seg" style="width:' + part.value + '%;background:' + part.color + '">' + (part.value >= 9 ? part.value + '%' : '') + '</div>').join('') + '</div></div>').join('') + '</div><div class="footer-note">Логика потока нужна продукту, чтобы не терять контекст после ключевого шага. Это уже не просто воронка, а сценарий следующего действия.</div></div>';
+  }
+
+  function renderHeatmap(heatmap) {
+    const flat = heatmap.values.flat();
+    const min = Math.min(...flat), max = Math.max(...flat);
+    function cellColor(value) {
+      const t = (value - min) / Math.max(1, max - min);
+      const r = Math.round(239 * (1 - t) + 16 * t);
+      const g = Math.round(68 * (1 - t) + 185 * t);
+      const b = Math.round(68 * (1 - t) + 129 * t);
+      return 'rgba(' + r + ',' + g + ',' + b + ',.78)';
+    }
+    let html = '<div class="chart-card"><div class="chart-title">Матрица успеха по устройству и методу</div><div class="heatmap">';
+    html += '<div class="heatmap-row"><div></div>' + heatmap.cols.map(c => '<div class="heatmap-head">' + escapeHtml(c) + '</div>').join('') + '</div>';
+    heatmap.rows.forEach((row, ri) => {
+      html += '<div class="heatmap-row"><div class="heatmap-label">' + escapeHtml(row) + '</div>';
+      heatmap.values[ri].forEach(value => { html += '<div class="heatmap-cell" style="background:' + cellColor(value) + '">' + pct(value) + '</div>'; });
+      html += '</div>';
+    });
+    html += '</div><div class="footer-note">Зачем блок нужен в ТЗ: он продаёт идею, что одна и та же платёжка может выглядеть нормально в среднем и разваливаться на отдельном устройстве.</div></div>';
+    return html;
+  }
+
+  function interactionDrawer(item) {
+    return {
+      title: item.name,
+      subtitle: 'Анализ первой значимой точки входа',
+      formula: 'Депозит после взаимодействия = Пользователи с депозитом после взаимодействия / Пользователи с таким первым взаимодействием × 100',
+      definition: 'Первое значимое действие пользователя в сессии и его последующий эффект на депозит и первую ставку.',
+      relevance: 'Это метрика «качественного входа» в продукт. Она помогает понять, какие точки входа на самом деле приближают пользователя к деньгам.',
+      success: 'Даёт продакту аргумент, почему усиливать нужно не самый кликабельный, а самый денежный блок.',
+      decisions: ['Менять порядок блоков на главной', 'Усиливать точки входа с сильным выходом в деньги', 'Снижать вес шумных элементов без продуктовой ценности'],
+      insights: [
+        'Доля сессий с этим первым действием: ' + pct(item.share) + '.',
+        'После него до депозита доходят ' + pct(item.dep) + ', а до первой ставки — ' + pct(item.bet) + '.',
+        item.dep > 12 ? 'Эта точка входа сильнее среднего по выходу в деньги и заслуживает большей видимости.' : 'Эта точка входа не даёт сильного выхода в деньги и требует переосмысления призыва к действию или сценария.'
+      ],
+      hypotheses: item.dep > 12
+        ? ['Сделать эту точку входа выше на главной и проверить прирост вовлечения.', 'Добавить рядом более явный аргумент ценности, чтобы усилить и без того хороший денежный сигнал.']
+        : ['Проверить, не является ли блок ловушкой внимания: интерес есть, а выхода в деньги нет.', 'Изменить текст и следующий шаг после клика, чтобы он вёл к более сильному сценарию.']
+    };
+  }
+
+  function renderCorePage(data) {
+    const core = data.core;
+    const engaged = core.find(x => x.id === 'engaged').value;
+    const regComplete = core.find(x => x.id === 'regComplete').value;
+    const depSuccess = core.find(x => x.id === 'depSuccess').value;
+    const gameStart = core.find(x => x.id === 'gameStart').value;
+    const firstBet = core.find(x => x.id === 'firstBet').value;
+    const regToDep = round(depSuccess / Math.max(regComplete, 1) * 100);
+    const trendColorMap = { engagement: COLORS.cyan, reg: COLORS.purple, dep: COLORS.green, bet: COLORS.orange };
+    const trendKeyName = { engagement: 'Вовлечённость', reg: 'Регистрация', dep: 'Депозит', bet: 'Первая ставка' };
+    const page = [];
+    page.push(pageHead('core'));
+    page.push('<div class="alert">Этот экран должен быть первым в любом разборе, потому что он позволяет за пять минут понять, где именно продукт теряет пользователя: в интересе, в регистрации, в платёжном намерении или уже на пути к первой ценности.</div>');
+    page.push('<div class="kpi-grid">'
+      + kpiCard({ label: 'Вовлечённый визит', value: pct(engaged), sub: 'от всех визитов', delta: 1.8, color: COLORS.cyan, metricKey: 'engagement' })
+      + kpiCard({ label: 'Регистрация завершена', value: pct(regComplete), sub: 'от вовлечённых', delta: -0.4, color: COLORS.purple, metricKey: 'reg' })
+      + kpiCard({ label: 'Депозит успешен', value: pct(depSuccess), sub: 'от вовлечённых', delta: 0.3, color: COLORS.green, metricKey: 'dep' })
+      + kpiCard({ label: 'Старт игры', value: pct(gameStart), sub: 'от вовлечённых', delta: 0.1, color: '#34d399', metricKey: 'bet' })
+      + kpiCard({ label: 'Первая ставка', value: pct(firstBet), sub: 'от вовлечённых', delta: 0.2, color: COLORS.orange, metricKey: 'bet' })
+      + kpiCard({ label: 'Reg → Dep', value: pct(regToDep), sub: 'сквозная конверсия из регистрации в депозит', delta: 1.1, color: COLORS.cyan, metricKey: 'dep' })
+      + '</div>');
+
+    page.push('<div class="section-grid-2">');
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Главная воронка пути</h3><p class="section-subtitle">Показывает, где продукт впервые теряет пользователя.</p></div><div class="section-actions"><button class="ghost-btn" ' + drawerAttrs({
+      title: 'Главная воронка пути', subtitle: 'ТЗ для продуктовой команды', formula: 'Каждый шаг считается как доля от визита, дополнительно показывается step-to-step CR.', definition: 'Блок нужен как единая карта потерь: от первого визита до первой реальной ставки.', relevance: 'Без него команда не понимает, на каком уровне находится проблема: трафик, регистрация, депозит или игровая активация.', success: 'Помогает выбрать один главный приоритет на спринт вместо десятка симптомов.', decisions: ['Чинить верх продукта или форму', 'Вести пользователя в депозит или в игру', 'Ставить цель по шагу, который реально ограничивает весь путь'], insights: ['Самый дорогой дроп — не всегда самый ранний. Нужно смотреть и объём потери, и близость к деньгам.', 'Если шаги выше стабильны, а депозит проседает, нет смысла сперва переписывать главную.'], hypotheses: ['На текущем наборе фильтров главный лимит воронки может быть либо в регистрации, либо на переходе в депозит.', 'Продукту нужен единый стандарт трактовки потерь по шагам, чтобы одинаково читать цифры в команде.'] }) + '>Открыть ТЗ блока</button></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Шаги от визита до первой ставки.', why: 'Это главный слой диагностики потерь и приоритизации роста.', decisions: 'Позволяет понять, что чинить первым: трафик, форму, депозитный шаг или discovery.' })
+      + renderFunnel(core, (step, index, stepCr) => ({
+          title: step.name,
+          subtitle: 'Шаг главной воронки',
+          formula: (index === 0 ? 'Визиты / Визиты × 100' : step.name + ' / предыдущий шаг × 100') ,
+          definition: 'Показывает долю пользователей, дошедших до шага «' + step.name + '».',
+          relevance: 'Нужен продакту, чтобы локализовать потерю и не спорить о симптомах.',
+          success: 'Шаг читается в двух слоях: вклад в общую воронку и собственная step-to-step эффективность.',
+          decisions: ['Ставить гипотезу на конкретный шаг', 'Сегментировать проблему по фильтрам', 'Оценивать, где рост даст реальный эффект на следующую денежную метрику'],
+          insights: ['Сквозная доля шага: ' + pct(step.value) + '.', 'Конверсия из предыдущего шага: ' + pct(stepCr) + '.'],
+          hypotheses: ['Если step-to-step здесь слабее соседних шагов, нужно искать friction именно на этом переходе.', 'Если шаг падает только на части фильтров, это не общая продуктовая проблема, а сегментная.']
+      }))
+      + '</div></section>');
+
+    page.push('<div>');
+    page.push(renderLineChart(data.trend, state.trendMetric, trendColorMap[state.trendMetric]));
+    page.push('<div style="margin-top:12px;" class="pills-row">'
+      + ['engagement','reg','dep','bet'].map(key => '<button class="filter-chip' + (state.trendMetric === key ? ' active' : '') + '" data-action="set-trend" data-value="' + key + '">' + trendKeyName[key] + '</button>').join('')
+      + '</div>');
+    page.push(renderFlow([{ from: 'После вовлечённого визита', parts: [
+      { label: 'Регистрация', value: 41, color: COLORS.cyan },
+      { label: 'Открытие игры', value: 22, color: COLORS.green },
+      { label: 'Страница бонусов', value: 14, color: COLORS.purple },
+      { label: 'Навигация', value: 10, color: COLORS.orange },
+      { label: 'Выход', value: 13, color: COLORS.red }
+    ] }]));
+    page.push('</div></div>');
+
+    const interactionsRows = data.interactions.slice().sort((a, b) => b.dep - a.dep).map(item => {
+      return '<tr class="clickable" ' + drawerAttrs(interactionDrawer(item)) + '>'
+        + '<td>' + escapeHtml(item.name) + '</td>'
+        + '<td>' + meter(item.share, 35, item.color) + '</td>'
+        + '<td class="mono ' + (item.dep > 12 ? 'good' : item.dep > 8 ? 'warn' : 'bad') + '">' + pct(item.dep) + '</td>'
+        + '<td class="mono">' + pct(item.bet) + '</td>'
+        + '<td>' + (item.dep > 12 ? '<span class="badge good">ведёт в деньги</span>' : item.dep > 8 ? '<span class="badge accent">рабочий блок</span>' : item.share > 15 ? '<span class="badge warn">много внимания, мало денег</span>' : '<span class="badge bad">слабый выход</span>') + '</td>'
+        + '</tr>';
+    }).join('');
+
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Первая значимая точка входа</h3><p class="section-subtitle">Нужна, чтобы ранжировать блоки по реальной отдаче, а не по общему трафику.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Первое осмысленное действие и его влияние на депозит и ставку.', why: 'Помогает выявить точки входа, которые реально приближают к деньгам.', decisions: 'Даёт аргумент для перестановки блоков и перераспределения внимания на главной.' })
+      + '<div class="table-wrap"><table class="table"><thead><tr><th>Первое действие</th><th>Доля сессий</th><th>Депозит после</th><th>Первая ставка</th><th>Сигнал</th></tr></thead><tbody>' + interactionsRows + '</tbody></table></div></div></section>');
+
+    return page.join('');
+  }
+
+  function renderUxPage(data) {
+    const filteredUx = state.uxZone === 'Все зоны' ? data.ux : data.ux.filter(item => item.zone === state.uxZone);
+    const champions = data.ux.filter(x => x.tag === 'champion').length;
+    const hidden = data.ux.filter(x => x.tag === 'hidden').length;
+    const traps = data.ux.filter(x => x.tag === 'trap').length;
+    const avgCtr = round(data.ux.reduce((s, x) => s + x.ctr, 0) / data.ux.length);
+    const zoneOptions = ['Все зоны', ...Array.from(new Set(data.ux.map(x => x.zone)))];
+    const page = [];
+    page.push(pageHead('ux'));
+    page.push('<div class="alert warning">Этот экран должен отучить команду принимать решения только по CTR. В ТЗ блок продаётся как слой оценки эффекта после взаимодействия: он показывает, какие зоны действительно двигают пользователя к регистрации, депозиту и ставке.</div>');
+    page.push('<div class="kpi-grid">'
+      + kpiCard({ label: 'Сильные блоки', value: String(champions), sub: 'высокое внимание и сильный выход в деньги', delta: 0.0, color: COLORS.cyan, metricKey: 'engagement' })
+      + kpiCard({ label: 'Скрытые чемпионы', value: String(hidden), sub: 'низкий CTR, высокий выход в деньги', delta: 1.0, color: COLORS.green, metricKey: 'dep' })
+      + kpiCard({ label: 'Attention traps', value: String(traps), sub: 'съедают внимание без монетизации', delta: 0.0, color: COLORS.orange, metricKey: 'bet' })
+      + kpiCard({ label: 'Средний CTR', value: pct(avgCtr), sub: 'по всем продуктовым зонам', delta: 0.7, color: COLORS.purple, metricKey: 'engagement' })
+      + '</div>');
+
+    page.push('<div class="section-grid-2">');
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Матрица продуктовых блоков</h3><p class="section-subtitle">Блок продаёт идею: клики важны только вместе с результатом после взаимодействия.</p></div><div class="section-actions"><button class="ghost-btn" ' + drawerAttrs({
+      title: 'Матрица продуктовых блоков', subtitle: 'Зачем этот блок в ТЗ', formula: 'Каждый блок оценивается по CTR, закрытию, регистрации и конверсии в депозит после взаимодействия.', definition: 'Матрица показывает, какие зоны заслуживают место на главной, а какие потребляют внимание без ценности.', relevance: 'Без такого слоя продукт почти всегда усиливает самые заметные, а не самые полезные элементы.', success: 'Позволяет говорить о контенте главной языком результата, а не мнений.', decisions: ['Перестановка блоков', 'Редизайн карточек', 'Сокращение ловушек внимания', 'Усиление скрытых чемпионов'], insights: ['Скрытый чемпион часто важнее баннера: он может давать меньше кликов, но больше денег.', 'Высокое соотношение закрытий при хорошем CTR — сигнал, что пользователь не получает обещанный следующий шаг.'], hypotheses: ['Часть блоков надо оценивать не по клику, а по выходу в сценарий депозита или игры.', 'Нужен отдельный стандарт анализа результата после взаимодействия для новых и возвращающихся игроков.'] }) + '>Открыть ТЗ блока</button></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'CTR, закрытие, регистрация и выход в депозит по каждому блоку.', why: 'Даёт продакту инструмент различать полезные и шумные зоны.', decisions: 'Позволяет переразложить главную страницу по влиянию на бизнес.' })
+      + '<div class="legend-row" style="margin-bottom:14px;">'
+      + '<div class="legend-chip"><span class="dot" style="background:' + COLORS.cyan + '"></span> сильный блок</div>'
+      + '<div class="legend-chip"><span class="dot" style="background:' + COLORS.green + '"></span> скрытый чемпион</div>'
+      + '<div class="legend-chip"><span class="dot" style="background:' + COLORS.orange + '"></span> ловушка внимания</div>'
+      + '</div>'
+      + '<div class="table-wrap"><table class="table"><thead><tr><th>Блок</th><th>Зона</th><th>Показы</th><th>CTR</th><th>Закрытие</th><th>Депозит после</th><th>Статус</th></tr></thead><tbody>'
+      + filteredUx.map(item => '<tr class="clickable" ' + drawerAttrs({
+          title: item.name,
+          subtitle: 'Разбор продуктового блока',
+          formula: 'Downstream Deposit = Deposits after interaction / Interactions × 100',
+          definition: 'Оценка конкретного блока по вниманию, friction и влиянию на деньги.',
+          relevance: 'Позволяет продакту защищать место блока на главной не эстетикой, а цифрой.',
+          success: 'Даёт ответ, надо ли усиливать видимость, менять сценарий после клика или убирать блок вниз.',
+          decisions: ['Менять порядок блоков', 'Переписывать призывы к действию', 'Скрывать шумные элементы', 'Усиливать зоны с высокой отдачей'],
+          insights: ['CTR: ' + pct(item.ctr) + '.', 'После блока до депозита доходят ' + pct(item.dep) + '.', item.close > 50 ? 'Высокое закрытие — блок может обещать больше, чем даёт после клика.' : 'Закрытие умеренное — блок не создаёт сильного раздражения.'],
+          hypotheses: item.tag === 'trap'
+            ? ['Сценарий после клика не соответствует ожиданию пользователя.', 'Блок забирает внимание из любопытства, но не ведёт в ценность.']
+            : item.tag === 'hidden'
+              ? ['Нужно увеличить видимость этого блока без изменения механики.', 'Блок можно вынести выше и протестировать рост выхода в деньги.']
+              : ['Блок стоит оптимизировать через тексты и порядок расположения, а не ломать механику полностью.', 'Нужен отдельный тест на новых и возвращающихся игроков.']
+        }) + '><td>' + escapeHtml(item.name) + '</td><td>' + escapeHtml(item.zone) + '</td><td class="mono">' + pct(item.impression) + '</td><td class="mono">' + pct(item.ctr) + '</td><td class="mono ' + (item.close > 50 ? 'bad' : item.close > 30 ? 'warn' : '') + '">' + pct(item.close) + '</td><td class="mono ' + (item.dep > 10 ? 'good' : item.dep > 6 ? 'warn' : 'bad') + '">' + pct(item.dep) + '</td><td>' + tagBadge(item.tag) + '</td></tr>').join('')
+      + '</tbody></table></div></div></section>');
+
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Фильтр по зоне</h3><p class="section-subtitle">Сегментация нужна, чтобы не смешивать главную, каталог, бонусы и навигацию в один средний результат.</p></div></div><div class="section-body">'
+      + '<div class="pills-row" style="margin-bottom:14px;">' + zoneOptions.map(zone => pill(zone, state.uxZone === zone, 'set-ux-zone', zone)).join('') + '</div>'
+      + '<div class="chart-card"><div class="chart-title">Что означает фильтр</div><div class="pitch-text">Сейчас в таблице показаны только блоки из зоны «' + escapeHtml(state.uxZone) + '». Это нужно, чтобы продакт видел локальную конкуренцию блоков внутри одной поверхности, а не сравнивал несопоставимые сценарии.</div></div>'
+      + '</div></section>');
+    page.push('</div>');
+    return page.join('');
+  }
+
+  function renderRegPage(data) {
+    const regSuccess = data.regFunnel[data.regFunnel.length - 1].value;
+    const passwordField = data.fieldFriction.find(x => x.field === 'Пароль');
+    const kycComplete = data.kyc[data.kyc.length - 1].value;
+    const depAfterKyc = adjust(61.4, data.prof.dep * data.prof.kyc, 10, 90);
+    const page = [];
+    page.push(pageHead('reg'));
+    page.push('<div class="alert">Этот экран нужен в ТЗ, чтобы продать не «упрощение формы вообще», а точечную работу по friction. Он показывает, где именно пользователь ломается и какие изменения реально надо делать первыми.</div>');
+    page.push('<div class="kpi-grid">'
+      + kpiCard({ label: 'Reg complete', value: pct(regSuccess), sub: 'от показа формы', delta: 0.8, color: COLORS.cyan, metricKey: 'reg' })
+      + kpiCard({ label: 'Drop на пароле', value: pct(passwordField.drop), sub: 'пользователи теряются на поле', delta: -1.2, color: COLORS.red, metricKey: 'reg' })
+      + kpiCard({ label: 'Ошибки на пароле', value: pct(passwordField.error), sub: 'доля validation errors', delta: 2.1, color: COLORS.orange, metricKey: 'reg' })
+      + kpiCard({ label: 'KYC complete', value: pct(kycComplete), sub: 'от старта KYC', delta: -1.8, color: COLORS.green, metricKey: 'reg' })
+      + kpiCard({ label: 'Депозит после KYC', value: pct(depAfterKyc), sub: 'намерение депозита после завершения', delta: 3.2, color: COLORS.purple, metricKey: 'dep' })
+      + '</div>');
+
+    page.push('<div class="section-grid-2">');
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Воронка регистрации</h3><p class="section-subtitle">Нужна, чтобы отделить слабый вход в форму от проблем уже внутри полей.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Путь от показа формы до успешной регистрации.', why: 'Даёт точный ответ, в каком месте форма перестаёт работать.', decisions: 'Помогает решать: чинить вход, поля, submit или валидацию.' })
+      + renderFunnel(data.regFunnel, (step, index, stepCr) => ({
+        title: step.name,
+        subtitle: 'Шаг регистрационной воронки',
+        formula: step.name + ' / показ формы × 100',
+        definition: 'Конверсия шага «' + step.name + '» от показа регистрационной формы.',
+        relevance: 'Продакт должен понимать, где теряет пользователя: до начала формы или уже внутри неё.',
+        success: 'Шаг помогает приоритизировать изменения, которые реально поднимут Reg Complete.',
+        decisions: ['Менять порядок полей', 'Убирать второстепенные требования', 'Тестировать другой сценарий входа'],
+        insights: ['Сквозная доля шага: ' + pct(step.value) + '.', 'Конверсия из предыдущего шага: ' + pct(stepCr) + '.'],
+        hypotheses: ['Если просадка локализована на этом шаге, надо тестировать минимальное изменение именно здесь.', 'Если шаг стабилен, не стоит списывать на него общую просадку Reg Complete.']
+      })) + '</div></section>');
+
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Фрикция по полям</h3><p class="section-subtitle">Нужна, чтобы убрать споры о «сложной форме» и показать точные виновники.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Drop rate и error rate по каждому полю.', why: 'Показывает, какие поля реально создают friction.', decisions: 'Позволяет переписать валидацию, подсказки и порядок полей.' })
+      + '<div class="table-wrap"><table class="table"><thead><tr><th>Поле</th><th>Drop rate</th><th>Error rate</th><th>Диагноз</th></tr></thead><tbody>'
+      + data.fieldFriction.map(field => '<tr class="clickable" ' + drawerAttrs({
+          title: 'Поле «' + field.field + '»',
+          subtitle: 'Диагностика friction',
+          formula: 'Drop Rate = Users left on field / Users reached field × 100',
+          definition: 'Отдельный разбор поля формы по потерям и ошибкам.',
+          relevance: 'Нужен продакту, чтобы не переписывать всю форму, когда проблема в одном поле.',
+          success: 'Позволяет целиться в конкретное изменение: валидация, тексты, плейсхолдер, обязательность.',
+          decisions: ['Изменить правила валидации', 'Добавить inline-подсказки', 'Сделать поле необязательным или перенести позже'],
+          insights: ['Drop rate: ' + pct(field.drop) + '.', 'Error rate: ' + pct(field.error) + '.'],
+          hypotheses: field.error > 30 ? ['Текущая валидация слишком жёсткая или непонятная.', 'Пользователь узнаёт о правилах слишком поздно — только после ошибки.'] : ['Проблема может быть не в валидации, а в слабой мотивации продолжать форму.', 'Стоит проверить, нужен ли этот шаг до депозита.']
+      }) + '><td>' + escapeHtml(field.field) + '</td><td class="mono ' + (field.drop > 15 ? 'bad' : field.drop > 9 ? 'warn' : 'good') + '">' + pct(field.drop) + '</td><td class="mono ' + (field.error > 25 ? 'bad' : field.error > 15 ? 'warn' : 'good') + '">' + pct(field.error) + '</td><td>' + (field.error > 25 ? '<span class="badge bad">высокая фрикция</span>' : field.error > 15 ? '<span class="badge warn">зона риска</span>' : '<span class="badge good">норма</span>') + '</td></tr>').join('')
+      + '</tbody></table></div></div></section>');
+    page.push('</div>');
+
+    page.push('<div class="section-grid-2">');
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Точки входа в регистрацию</h3><p class="section-subtitle">Нужно смотреть не только форму, но и сценарий, из которого в неё заходят.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Входная точка → завершение регистрации → депозит после неё.', why: 'Одна и та же форма может конвертить по-разному в зависимости от сценария входа.', decisions: 'Даёт аргументы для перераспределения трафика внутри продукта и изменения входных призывов к действию.' })
+      + '<div class="table-wrap"><table class="table"><thead><tr><th>Точка входа</th><th>Reg start индекс</th><th>Reg complete</th><th>Dep после</th></tr></thead><tbody>'
+      + data.regEntry.map(item => '<tr class="clickable" ' + drawerAttrs({
+          title: item.source,
+          subtitle: 'Сценарий входа в регистрацию',
+          formula: 'Deposit after registration = Deposits from entry point / registrations from entry point × 100',
+          definition: 'Разбор входной точки с точки зрения её способности довести до регистрации и депозита.',
+          relevance: 'Продакту важно знать, откуда пользователя выгоднее вести в форму.',
+          success: 'Это блок про приоритет трафика и перестановку входных призывов к действию внутри продукта.',
+          decisions: ['Усиливать сильные точки входа', 'Убирать слабые призывы к действию', 'Менять формат входа для новых игроков'],
+          insights: ['Reg complete: ' + pct(item.regComplete) + '.', 'Dep после регистрации: ' + pct(item.depAfter) + '.'],
+          hypotheses: item.depAfter > 13 ? ['Эту точку входа стоит сделать заметнее.', 'Можно тестировать похожий текст на соседних поверхностях.'] : ['Сценарий входа даёт слабое намерение и требует другого ценностного предложения.', 'Возможно, лучше вести пользователя в игровой контекст до формы.']
+      }) + '><td>' + escapeHtml(item.source) + '</td><td class="mono">' + pct(item.regStart) + '</td><td class="mono">' + pct(item.regComplete) + '</td><td class="mono ' + (item.depAfter > 13 ? 'good' : item.depAfter > 9 ? 'warn' : 'bad') + '">' + pct(item.depAfter) + '</td></tr>').join('')
+      + '</tbody></table></div></div></section>');
+
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">KYC и влияние на деньги</h3><p class="section-subtitle">Блок нужен, чтобы KYC обсуждали через эффект на деньги, а не только через completion rate.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Прохождение KYC и изменение намерения депозита после него.', why: 'Позволяет оценить, где KYC действительно тормозит рост, а где помогает доочистить намерение.', decisions: 'Даёт основание менять момент запуска KYC и приоритет этапов проверки.' })
+      + renderFunnel(data.kyc.map((item, idx) => ({ id: 'kyc-' + idx, name: item.name, value: item.value, color: idx === data.kyc.length - 1 ? COLORS.green : COLORS.cyan })), (step, index, stepCr) => ({
+        title: step.name,
+        subtitle: 'Шаг KYC',
+        formula: step.name + ' / старт KYC × 100',
+        definition: 'Показывает, какая доля пользователей доходит до шага «' + step.name + '».',
+        relevance: 'Нужно, чтобы продакт видел, какой именно этап KYC ограничивает дальнейший выход в деньги.',
+        success: 'Позволяет тестировать перенос или упрощение шага без догадок.',
+        decisions: ['Менять порядок шагов KYC', 'Выносить KYC после первой ценности', 'Усиливать статус и прогресс'],
+        insights: ['Сквозная доля шага: ' + pct(step.value) + '.', 'Конверсия из предыдущего шага: ' + pct(stepCr) + '.'],
+        hypotheses: ['Пользователь не понимает, зачем KYC нужен именно сейчас.', 'В шаге не хватает объяснения выгоды и прогресса процесса.']
+      }))
+      + '<div class="footer-note">Дополнительный смысл блока: KYC должен оцениваться не только как обязательство compliance, но и как часть продуктового пути к депозиту.</div>'
+      + '</div></section>');
+    page.push('</div>');
+    return page.join('');
+  }
+
+  function renderBonusPage(data) {
+    const bestBonus = data.bonus.slice().sort((a,b) => b.depAfter - a.depAfter)[0];
+    const storeSuccess = data.storeFunnel[data.storeFunnel.length - 1].value;
+    const page = [];
+    page.push(pageHead('bonus'));
+    page.push('<div class="alert warning">Этот экран нужен в ТЗ как защита от поверхностной оценки бонусов и магазина. Он показывает, какие механики действительно двигают депозит и игру, а какие существуют только как engagement-надстройка.</div>');
+    page.push('<div class="kpi-grid">'
+      + kpiCard({ label: 'Доля применения бонусов', value: pct(round(data.bonus.reduce((s,x)=>s+x.apply,0)/data.bonus.length)), sub: 'среднее по бонусным механикам', delta: 1.8, color: COLORS.cyan, metricKey: 'dep' })
+      + kpiCard({ label: 'Доля блокировок', value: pct(round(data.bonus.reduce((s,x)=>s+x.blocked,0)/data.bonus.length)), sub: 'что теряем на условиях доступа', delta: -0.4, color: COLORS.red, metricKey: 'payment' })
+      + kpiCard({ label: 'Лучший бонус', value: bestBonus.type, sub: 'максимальный выход в депозит после применения', delta: 0.0, color: COLORS.green, metricKey: 'dep' })
+      + kpiCard({ label: 'Покупка в магазине', value: pct(storeSuccess), sub: 'успешные покупки от открытия магазина', delta: 0.8, color: COLORS.purple, metricKey: 'dep' })
+      + '</div>');
+
+    page.push('<div class="section-grid-2">');
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Эффективность бонусных механик</h3><p class="section-subtitle">Нужно измерять не только интерес к бонусу, но и выход в депозит после него.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Открытие бонуса, чтение условий, применение, блокировки и депозит после него.', why: 'Показывает, какие бонусы реально помогают монетизации, а не просто собирают просмотры.', decisions: 'Даёт основания менять доступность, тексты и приоритет бонусов на витрине.' })
+      + '<div class="table-wrap"><table class="table"><thead><tr><th>Тип бонуса</th><th>Карточка</th><th>Применение</th><th>Блокировки</th><th>Депозит после</th><th>Успешный депозит</th></tr></thead><tbody>'
+      + data.bonus.map(item => '<tr class="clickable" ' + drawerAttrs({
+          title: item.type,
+          subtitle: 'Разбор бонусной механики',
+          formula: 'Депозит после бонуса = Пользователи с депозитом после применения / Пользователи, применившие бонус × 100',
+          definition: 'Показывает ценность бонуса как мостика к депозиту, а не просто как карточки на витрине.',
+          relevance: 'Продакт может защитить или снять бонус с промо-позиции на основе реального эффекта в деньги.',
+          success: 'Нужен, чтобы разделять бонусы на мотиваторы и на декоративные механики.',
+          decisions: ['Менять место бонуса', 'Переписывать условия и тексты', 'Убирать барьеры доступа', 'Менять бонус, который предлагается по умолчанию'],
+          insights: ['Доля применения: ' + pct(item.apply) + '.', 'Доля блокировок: ' + pct(item.blocked) + '.', 'После бонуса до депозита доходят ' + pct(item.depAfter) + '.'],
+          hypotheses: item.blocked > 15 ? ['Условия допуска не читаются заранее и создают ложное ожидание.', 'Нужно показывать доступность раньше, ещё до клика по применению.'] : item.depAfter > 15 ? ['Бонус можно использовать как основной драйвер первого депозита.', 'Стоит усилить видимость этого оффера на главной и в депозитном шаге.'] : ['Бонус вызывает интерес, но не переводит его в деньги.', 'Нужно проверить, не слишком ли он сложный или неочевидный по выгоде.']
+      }) + '><td>' + escapeHtml(item.type) + '</td><td class="mono">' + pct(item.card) + '</td><td class="mono">' + pct(item.apply) + '</td><td class="mono ' + (item.blocked > 15 ? 'bad' : item.blocked > 8 ? 'warn' : 'good') + '">' + pct(item.blocked) + '</td><td class="mono ' + (item.depAfter > 15 ? 'good' : item.depAfter > 10 ? 'warn' : 'bad') + '">' + pct(item.depAfter) + '</td><td class="mono good">' + pct(item.depSuccess) + '</td></tr>').join('')
+      + '</tbody></table></div></div></section>');
+
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Магазин</h3><p class="section-subtitle">Важен как отдельный продуктовый сценарий, а не как вторичный экран.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Путь в магазине от открытия до покупки и источники входа.', why: 'Позволяет понять, магазин — самостоятельный двигатель активации или просто вспомогательный экран.', decisions: 'Даёт основания менять навигацию, витрину и точки входа в магазин.' })
+      + renderFunnel(data.storeFunnel, (step, index, stepCr) => ({
+          title: step.name,
+          subtitle: 'Шаг магазина',
+          formula: step.name + ' / открытие магазина × 100',
+          definition: 'Сквозная доля пользователей, дошедших до этого шага в магазине.',
+          relevance: 'Нужно продакту, чтобы понять, где теряется покупатель внутри магазинного сценария.',
+          success: 'Позволяет локально улучшать витрину, карточку товара или checkout.',
+          decisions: ['Упростить выбор категории', 'Убрать лишние настройки', 'Сделать популярные товары заметнее'],
+          insights: ['Сквозная доля шага: ' + pct(step.value) + '.', 'Конверсия из предыдущего шага: ' + pct(stepCr) + '.'],
+          hypotheses: ['Если падение происходит до открытия товара, проблема в витрине.', 'Если потери на попытке покупки, проблема уже ближе к checkout или ценности товара.']
+      }))
+      + '<div style="margin-top:14px;" class="table-wrap"><table class="table"><thead><tr><th>Источник входа</th><th>Доля входов</th></tr></thead><tbody>'
+      + data.storeEntry.map(item => '<tr><td>' + escapeHtml(item.source) + '</td><td>' + meter(item.value, 40, COLORS.purple) + '</td></tr>').join('')
+      + '</tbody></table></div></div></section>');
+    page.push('</div>');
+
+    page.push('<div class="section-grid-2">');
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Промо</h3><p class="section-subtitle">Нужно мерить промо не по просмотрам, а по участию и выходу в целевое действие.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Открытие промо, участие и выход в депозит после него.', why: 'Промо часто съедает место на главной, поэтому должно защищаться цифрой.', decisions: 'Помогает выбирать, какие промо масштабировать, а какие сокращать.' })
+      + '<div class="chart-card"><div class="chart-title">Продуктовая логика блока</div><div class="pitch-text">В ТЗ этот блок продаёт мысль, что промо — это не баннер, а отдельный сценарий активации. У каждого оффера должна быть видна цена места на главной и реальная отдача в деньги.</div></div></div></section>');
+
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Турниры</h3><p class="section-subtitle">Турниры нужно оценивать как повторяемый сценарий удержания и реактивации.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Открытие, участие, депозит после, старт игры после турнира.', why: 'Показывает, турнир работает как retention-механика или только как шумовой контент.', decisions: 'Даёт основания менять механику участия, призы и точки входа.' })
+      + '<div class="table-wrap"><table class="table"><thead><tr><th>Турнир</th><th>Открытие</th><th>Участие</th><th>Депозит после</th><th>Старт игры</th></tr></thead><tbody>'
+      + [
+        ['Еженедельная битва слотов', 61.0, 32.0, 18.0, 44.0],
+        ['Crash Tournament', 44.0, 24.0, 12.0, 34.0],
+        ['Кубок лайв-казино', 38.0, 18.0, 9.0, 28.0]
+      ].map(item => '<tr><td>' + escapeHtml(item[0]) + '</td><td class="mono">' + pct(item[1]) + '</td><td class="mono">' + pct(item[2]) + '</td><td class="mono">' + pct(item[3]) + '</td><td class="mono">' + pct(item[4]) + '</td></tr>').join('')
+      + '</tbody></table></div></div></section>');
+    page.push('</div>');
+    return page.join('');
+  }
+
+  function renderDiscoveryPage(data) {
+    const sortKey = state.discoverySort;
+    const sortMap = { firstBet: 'firstBet', real: 'real', click: 'click', impression: 'impression' };
+    const items = data.discovery.slice().sort((a,b)=>b[sortMap[sortKey]] - a[sortMap[sortKey]]);
+    const top = items[0];
+    const avg = round(items.reduce((s,x)=>s+x.firstBet,0)/items.length);
+    const demoReal = round(items.reduce((s,x)=>s + (x.real / Math.max(x.demo || 1, 1)),0)/items.length * 10);
+    const avgReturn = round(items.reduce((s,x)=>s+x.return,0)/items.length);
+    const page = [];
+    page.push(pageHead('discovery'));
+    page.push('<div class="alert">В ТЗ этот блок продаётся как анти-ловушка для каталога: он не даёт оптимизировать каталог только под клики и просмотры, если цель продукта — довести до первой ставки.</div>');
+    page.push('<div class="kpi-grid">'
+      + kpiCard({ label: 'Лучшая секция', value: top.name, sub: 'по текущей сортировке', delta: 0.0, color: COLORS.cyan, metricKey: 'bet' })
+      + kpiCard({ label: 'Средний выход в ставку', value: pct(avg), sub: 'от показа секции до первой ставки', delta: 0.6, color: COLORS.green, metricKey: 'bet' })
+      + kpiCard({ label: 'Переход демо → реал', value: pct(demoReal), sub: 'среднее отношение реального старта к демо', delta: 1.2, color: COLORS.purple, metricKey: 'bet' })
+      + kpiCard({ label: 'Возврат в каталог', value: pct(avgReturn), sub: 'доля возврата без ставки', delta: -0.8, color: COLORS.orange, metricKey: 'bet' })
+      + '</div>');
+
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Производительность секций каталога</h3><p class="section-subtitle">Нужно сравнивать секции по тому, ведут ли они к игре и ставке, а не только по вниманию.</p></div><div class="section-actions">'
+      + ['firstBet','real','click','impression'].map(key => pill({ firstBet:'Первая ставка', real:'Старт на реальные деньги', click:'CTR', impression:'Показы' }[key], state.discoverySort === key, 'set-discovery-sort', key)).join('')
+      + '</div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Путь секции от показа до первой ставки и возврата в каталог.', why: 'Помогает оценивать discovery по продуктовой ценности, а не по визуальному вниманию.', decisions: 'Позволяет переставлять секции, менять карточки и усиливать конкретные игровые сценарии.' })
+      + '<div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>Секция</th><th>Показы</th><th>CTR</th><th>Открытие игры</th><th>Старт на реальные деньги</th><th>Первая ставка</th><th>Возврат</th></tr></thead><tbody>'
+      + items.map((item, idx) => '<tr class="clickable" ' + drawerAttrs({
+          title: item.name,
+          subtitle: 'Разбор секции каталога',
+          formula: 'Первая ставка = Пользователи с первой ставкой после секции / Пользователи, увидевшие секцию × 100',
+          definition: 'Показывает, как конкретная секция каталога проводит пользователя от показа до реальной ставки.',
+          relevance: 'Это главный продуктовый критерий для каталога: не клики, а скорость и качество выхода в ценность.',
+          success: 'Продакт получает аргумент, какие секции поднимать выше, а какие перерабатывать.',
+          decisions: ['Менять порядок секций', 'Усиливать игровые карточки', 'Менять призыв к действию и тип превью', 'Выводить сильные сценарии выше на новых пользователях'],
+          insights: ['CTR: ' + pct(item.click) + '.', 'Старт на реальные деньги: ' + pct(item.real) + '.', 'Первая ставка: ' + pct(item.firstBet) + '.', 'Возврат в каталог: ' + pct(item.return) + '.'],
+          hypotheses: item.return > 40 ? ['Пользователь не понимает, что выбрать дальше внутри секции.', 'Карточки привлекают внимание, но не создают уверенности для входа в игру.'] : item.firstBet > 10 ? ['Эту секцию можно усиливать как основной драйвер первой ценности.', 'Стоит протестировать вынос секции выше на новых игроках.'] : ['Нужно менять упаковку секции или её место в каталоге.', 'Возможно, у секции хороший CTR, но слабый сценарий после клика.']
+      }) + '><td class="mono">' + String(idx + 1) + '</td><td>' + escapeHtml(item.name) + '</td><td class="mono">' + pct(item.impression) + '</td><td class="mono">' + pct(item.click) + '</td><td class="mono">' + pct(item.gameOpen) + '</td><td class="mono ' + (item.real > 12 ? 'good' : item.real > 8 ? 'warn' : 'bad') + '">' + pct(item.real) + '</td><td>' + meter(item.firstBet, 18, item.firstBet > 10 ? COLORS.green : item.firstBet > 6 ? COLORS.orange : COLORS.red) + '</td><td class="mono ' + (item.return > 40 ? 'bad' : item.return > 20 ? 'warn' : 'good') + '">' + pct(item.return) + '</td></tr>').join('')
+      + '</tbody></table></div></div></section>');
+
+    page.push('<div class="section-grid-2">');
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Источник входа в игру → первая ставка</h3><p class="section-subtitle">Нужно, чтобы продакт видел, какой тип входа даёт самое сильное денежное намерение.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Разные типы входа в игру и их выход в первую ставку.', why: 'Помогает понять, лучше ли работает поиск, бонусный вход, сторис или главная.', decisions: 'Позволяет перераспределить внимание между сценариями входа в игру.' })
+      + '<div class="table-wrap"><table class="table"><thead><tr><th>Источник</th><th>Первая ставка</th></tr></thead><tbody>'
+      + [
+        ['Секция на главной', 9.4],
+        ['Промо-сценарий', 12.8],
+        ['Бонусный сценарий', 14.2],
+        ['Сторис', 11.1],
+        ['Поиск', 16.4],
+        ['Прямой вход', 8.1]
+      ].map(item => '<tr><td>' + escapeHtml(item[0]) + '</td><td>' + meter(item[1], 18, item[1] > 12 ? COLORS.green : item[1] > 9 ? COLORS.orange : COLORS.red) + '</td></tr>').join('')
+      + '</tbody></table></div></div></section>');
+
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Путь после открытия игры</h3><p class="section-subtitle">Нужен, чтобы понимать, какой следующий шаг продукт предлагает после game open.</p></div></div><div class="section-body">'
+      + renderFlow([{ from: 'После открытия игры', parts: [
+        { value: 42, color: COLORS.green },
+        { value: 24, color: COLORS.cyan },
+        { value: 18, color: COLORS.orange },
+        { value: 10, color: COLORS.purple },
+        { value: 6, color: COLORS.red }
+      ] }])
+      + '<div class="legend-row" style="margin-top:12px;"><div class="legend-chip"><span class="dot" style="background:' + COLORS.green + '"></span> первая ставка</div><div class="legend-chip"><span class="dot" style="background:' + COLORS.cyan + '"></span> demo</div><div class="legend-chip"><span class="dot" style="background:' + COLORS.orange + '"></span> возврат в каталог</div><div class="legend-chip"><span class="dot" style="background:' + COLORS.purple + '"></span> намерение депозита</div><div class="legend-chip"><span class="dot" style="background:' + COLORS.red + '"></span> выход</div></div>'
+      + '</div></section>');
+    page.push('</div>');
+    return page.join('');
+  }
+
+  function renderDepositPage(data) {
+    const success = data.depositFunnel[data.depositFunnel.length - 1].value;
+    const abandon = round(data.methods.reduce((s,x)=>s+x.abandon,0)/data.methods.length);
+    const fail = round(data.methods.reduce((s,x)=>s+x.fail,0)/data.methods.length);
+    const retry = round(data.methods.reduce((s,x)=>s+x.retry,0)/data.methods.length);
+    const retrySuccess = adjust(58.4, data.prof.retention * data.prof.payment, 10, 95);
+    const page = [];
+    page.push(pageHead('deposit'));
+    page.push('<div class="alert danger">Этот экран продаёт в ТЗ самую дорогую идею: мы теряем уже прогретое намерение. Поэтому блок должен объяснять не просто ошибки, а стоимость каждой точки потери для продукта.</div>');
+    page.push('<div class="kpi-grid">'
+      + kpiCard({ label: 'Успех депозита', value: pct(success), sub: 'от открытия депозитного слоя', delta: 1.2, color: COLORS.green, metricKey: 'payment' })
+      + kpiCard({ label: 'Доля ухода', value: pct(abandon), sub: 'средний уход без завершения', delta: -0.8, color: COLORS.orange, metricKey: 'payment' })
+      + kpiCard({ label: 'Доля ошибок', value: pct(fail), sub: 'ошибки после подтверждения', delta: 0.4, color: COLORS.red, metricKey: 'payment' })
+      + kpiCard({ label: 'Повторная попытка', value: pct(retry), sub: 'повторная попытка после ошибки', delta: 1.8, color: COLORS.cyan, metricKey: 'payment' })
+      + kpiCard({ label: 'Успех после повтора', value: pct(retrySuccess), sub: 'резерв роста после неудачи', delta: 2.1, color: COLORS.purple, metricKey: 'payment' })
+      + '</div>');
+
+    page.push('<div class="section-grid-2">');
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Воронка депозитного UX</h3><p class="section-subtitle">Нужно понимать, где пропадает уже сформированное намерение заплатить.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Шаги внутри депозитного слоя от открытия до успешного зачисления.', why: 'Даёт прозрачную карту потерь на последней миле монетизации.', decisions: 'Помогает выбирать, что менять первым: методы, форму, бонус, копирайт, провайдера.' })
+      + renderFunnel(data.depositFunnel, (step, index, stepCr) => ({
+        title: step.name,
+        subtitle: 'Шаг депозитной воронки',
+        formula: step.name + ' / открытие депозита × 100',
+        definition: 'Сквозная доля пользователей, дошедших до шага «' + step.name + '».',
+        relevance: 'Это главный инструмент диагностики потерь между намерением заплатить и реальным зачислением.',
+        success: 'Позволяет приоритизировать изменения, которые дают прямой эффект на выручку.',
+        decisions: ['Переставить методы', 'Сократить форму', 'Поменять бонус по умолчанию', 'Изменить сценарий после ошибки'],
+        insights: ['Сквозная доля шага: ' + pct(step.value) + '.', 'Конверсия из предыдущего шага: ' + pct(stepCr) + '.'],
+        hypotheses: ['Если падение на выборе метода — проблема в покрытии и приоритизации.', 'Если падение на подтверждении или успешном зачислении — нужно смотреть ошибки и провайдеров.']
+      }))
+      + '</div></section>');
+
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Методы оплаты</h3><p class="section-subtitle">Блок нужен, чтобы сортировать методы по реальной проблемности, а не по интуиции.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Успех, ошибки, уход и повтор по каждому методу.', why: 'Позволяет сразу увидеть, какой метод реально душит монетизацию.', decisions: 'Помогает приоритизировать работу с провайдером и порядок методов в форме.' })
+      + '<div class="table-wrap"><table class="table"><thead><tr><th>Метод</th><th>Успех</th><th>Ошибки</th><th>Уход</th><th>Повтор</th><th>Главная ошибка</th></tr></thead><tbody>'
+      + data.methods.map(item => '<tr class="clickable" ' + drawerAttrs({
+          title: item.method,
+          subtitle: 'Разбор платёжного метода',
+          formula: 'Успех = Успешные депозиты / Попытки подтверждения × 100',
+          definition: 'Показывает качество конкретного платёжного метода в реальном пользовательском потоке.',
+          relevance: 'Нужен продакту, чтобы расставлять методы в правильном порядке и не чинить не то.',
+          success: 'Даёт ответ, какой метод лечить первым и где есть резерв роста через повтор или резервный сценарий.',
+          decisions: ['Менять порядок методов', 'Подключать резервного провайдера', 'Показывать альтернативу после ошибки', 'Менять текст ошибок и доверительные элементы'],
+          insights: ['Успех: ' + pct(item.success) + '.', 'Ошибки: ' + pct(item.fail) + '.', 'Уход: ' + pct(item.abandon) + '.', 'Повтор: ' + pct(item.retry) + '.', 'Топ-ошибка: ' + item.errorTop + '.'],
+          hypotheses: item.success < 65 ? ['Метод даёт слишком много технических потерь и должен быть ниже в списке.', 'После ошибки нужен явный перевод на альтернативный метод.'] : ['Метод стабилен и может быть вынесен выше как метод по умолчанию.', 'Стоит усиливать видимость этого метода в соответствующем гео.']
+      }) + '><td>' + escapeHtml(item.method) + '</td><td>' + meter(item.success, 100, item.success > 75 ? COLORS.green : item.success > 60 ? COLORS.orange : COLORS.red) + '</td><td class="mono bad">' + pct(item.fail) + '</td><td class="mono warn">' + pct(item.abandon) + '</td><td class="mono">' + pct(item.retry) + '</td><td>' + escapeHtml(item.errorTop) + '</td></tr>').join('')
+      + '</tbody></table></div></div></section>');
+    page.push('</div>');
+
+    page.push('<div class="section-grid-2">');
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Ошибки и их влияние</h3><p class="section-subtitle">Частота и влияние — разные вещи. Блок нужен, чтобы чинить то, что дороже всего.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Частота ошибки и её вклад в потерю конверсии.', why: 'Помогает не путать громкие ошибки с самыми дорогими для продукта.', decisions: 'Даёт основу для очереди исправлений у продукта и платёжной команды.' })
+      + '<div class="table-wrap"><table class="table"><thead><tr><th>Тип ошибки</th><th>Частота</th><th>Влияние на конверсию</th></tr></thead><tbody>'
+      + data.errors.map(item => '<tr><td>' + escapeHtml(item.type) + '</td><td>' + meter(item.freq, 40, COLORS.orange) + '</td><td>' + meter(item.impact, 35, COLORS.red) + '</td></tr>').join('')
+      + '</tbody></table></div></div></section>');
+
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Разрез устройство × метод</h3><p class="section-subtitle">Средняя температура скрывает реальную проблему. Этот блок нужен для локализации провалов.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Успех метода по каждому устройству.', why: 'Позволяет увидеть, что конкретная платёжка может ломаться только на мобильном или только на iOS.', decisions: 'Даёт основу для приоритета починки и адресного резервного сценария.' })
+      + renderHeatmap(data.heatmap)
+      + '</div></section>');
+    page.push('</div>');
+
+    page.push('<section class="section"><div class="section-head"><div><h3 class="section-title">Путь после неуспешного депозита</h3><p class="section-subtitle">Блок нужен, чтобы видеть резерв роста после ошибки, а не считать потерю безвозвратной.</p></div></div><div class="section-body">'
+      + sectionPitch({ measure: 'Что делает пользователь после ошибки депозита.', why: 'Повторная попытка — это зона быстрого роста без покупки нового трафика.', decisions: 'Помогает решить, нужен ли резервный сценарий, поддержка, смена метода или напоминание.' })
+      + renderFlow([{ from: 'После ошибки', parts: [
+        { value: 42, color: COLORS.cyan },
+        { value: 24, color: COLORS.green },
+        { value: 12, color: COLORS.orange },
+        { value: 14, color: COLORS.purple },
+        { value: 8, color: COLORS.red }
+      ] }])
+      + '<div class="legend-row" style="margin-top:12px;"><div class="legend-chip"><span class="dot" style="background:' + COLORS.cyan + '"></span> повторить тот же метод</div><div class="legend-chip"><span class="dot" style="background:' + COLORS.green + '"></span> сменить метод</div><div class="legend-chip"><span class="dot" style="background:' + COLORS.orange + '"></span> поддержка</div><div class="legend-chip"><span class="dot" style="background:' + COLORS.purple + '"></span> вернуться позже</div><div class="legend-chip"><span class="dot" style="background:' + COLORS.red + '"></span> выход</div></div>'
+      + '</div></section>');
+    return page.join('');
+  }
+
+  function renderCurrentPage(data) {
+    if (state.page === 'core') return renderCorePage(data);
+    if (state.page === 'ux') return renderUxPage(data);
+    if (state.page === 'reg') return renderRegPage(data);
+    if (state.page === 'bonus') return renderBonusPage(data);
+    if (state.page === 'discovery') return renderDiscoveryPage(data);
+    return renderDepositPage(data);
+  }
+
+  function render() {
+    drawerRegistry = {};
+    drawerSeq = 0;
+    const data = deriveData(state.filters);
+    const tabs = [
+      ['core', 'Главная воронка'],
+      ['ux', 'Продуктовые блоки'],
+      ['reg', 'Регистрация и KYC'],
+      ['bonus', 'Бонусы и магазин'],
+      ['discovery', 'Игровой каталог'],
+      ['deposit', 'Депозитный UX']
+    ];
+
+    app.innerHTML = '<div class="header">'
+      + '<div class="header-top">'
+      + '<div class="logo-wrap"><div class="logo-badge"><span></span><span></span><span></span><span></span></div><div><div class="logo-title">FL продуктовый BI-дашборд</div><div class="logo-subtitle">Все блоки переведены на язык продуктовой ценности и ТЗ</div></div></div>'
+      + '<div class="header-meta"><div class="meta-pill">Проект: ' + escapeHtml(state.filters.project) + '</div><div class="meta-pill">Период: ' + escapeHtml(state.filters.period) + '</div><div class="meta-pill">Сегмент: ' + escapeHtml(state.filters.lifecycle) + '</div></div>'
+      + '</div>'
+      + '<div class="filter-bar">'
+      + ['project','period','device','geo','lifecycle'].map(key => '<div class="filter-group"><span class="filter-group-label">' + ({project:'Проект',period:'Период',device:'Устройство',geo:'Гео',lifecycle:'Сегмент'})[key] + '</span>' + FILTER_OPTIONS[key].map(val => pill(val, state.filters[key] === val, 'set-filter-' + key, val)).join('') + '</div>').join('')
+      + '<div class="filter-group"><button class="ghost-btn" data-action="reset-filters">Сбросить фильтры</button></div>'
+      + '</div>'
+      + '<div class="tabs">' + tabs.map(tab => '<div class="tab' + (state.page === tab[0] ? ' active' : '') + '" data-action="set-page" data-value="' + tab[0] + '">' + tab[1] + '</div>').join('') + '</div>'
+      + '</div>'
+      + '<main class="main">' + renderCurrentPage(data) + '</main>'
+      + (state.drawer ? buildDrawerContent(state.drawer) : '');
+  }
+
+  document.addEventListener('click', function(event) {
+    const el = event.target.closest('[data-action]');
+    if (!el) return;
+    const action = el.getAttribute('data-action');
+    const value = el.getAttribute('data-value');
+    if (action === 'set-page') { state.page = value; state.drawer = null; render(); return; }
+    if (action === 'set-trend') { state.trendMetric = value; render(); return; }
+    if (action === 'set-ux-zone') { state.uxZone = value; render(); return; }
+    if (action === 'set-discovery-sort') { state.discoverySort = value; render(); return; }
+    if (action.startsWith('set-filter-')) {
+      const key = action.replace('set-filter-', '');
+      state.filters[key] = value;
+      state.drawer = null;
+      render();
+      return;
+    }
+    if (action === 'reset-filters') {
+      state.filters = JSON.parse(JSON.stringify(baseState.filters));
+      state.drawer = null;
+      render();
+      return;
+    }
+    if (action === 'open-drawer') {
+      const id = el.getAttribute('data-drawer-id');
+      state.drawer = drawerRegistry[id] || null;
+      render();
+      return;
+    }
+    if (action === 'close-drawer') {
+      state.drawer = null;
+      render();
+      return;
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
